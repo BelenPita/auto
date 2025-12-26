@@ -178,5 +178,130 @@ v = 0.29666e9 #m/s
 L1 = X1 / w
 C1 = B1 / w
 
+# 2 km
+l = 2
+tau = l/v/1000
 
-print(f"TTR = {1/math.sqrt(L1*C1)}")
+U10 = U0 * (L1 * l) / (L + L1 *l)
+U1 = (U0 - U10) * (np.cos(w*t) - np.cos(w1*t))
+
+x = np.arange(0, 0.02, 1e-6)
+y = [-2*U10, 0]
+i = 0
+
+while len(y) < len(x):
+    if i % 2 == 0:
+        y.append(0)
+    else:
+        y.append(-2*U10)
+    i += 1
+U2 = np.array(y)
+
+
+U_TTR7 = U1 - U2
+
+plt.figure()
+plt.plot(t, U_TTR7, label='U_TTR')
+plt.plot(t, y, label='U_s')
+plt.xlim(0, 0.02)
+plt.ylim(-250, 250)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Tensión (kV)')
+plt.title('U_TTR a 2 km')
+plt.legend()
+plt.grid(True)
+
+
+# 2 km
+l = 10
+
+U10 = U0 * (L1 * l) / (L + L1 *l)
+U1 = (U0 - U10) * (np.cos(w*t) - np.cos(w1*t))
+U2 = - 2 * U10
+
+U_TTR8 = U1 - U2
+
+plt.figure()
+plt.plot(t, U_TTR8, label='U_TTR')
+plt.plot(t, U_s, label='U_s')
+plt.xlim(0, 0.02)
+plt.ylim(-250, 250)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Tensión (kV)')
+plt.title('U_TTR a 10 km')
+plt.legend()
+plt.grid(True)
+
+
+# 20 km
+l = 20
+
+U10 = U0 * (L1 * l) / (L + L1 *l)
+U1 = (U0 - U10) * (np.cos(w*t) - np.cos(w1*t))
+U2 = - 2 * U10
+
+U_TTR9 = U1 - U2
+
+plt.figure()
+plt.plot(t, U_TTR9, label='U_TTR')
+plt.plot(t, U_s, label='U_s')
+plt.xlim(0, 0.02)
+plt.ylim(-250, 250)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Tensión (kV)')
+plt.title('U_TTR a 20 km')
+plt.legend()
+plt.grid(True)
+
+# 90 km
+l = 90
+
+U10 = U0 * (L1 * l) / (L + L1 *l)
+U1 = (U0 - U10) * (np.cos(w*t) - np.cos(w1*t))
+U2 = - 2 * U10
+
+U_TTR10 = U1 - U2
+
+plt.figure()
+plt.plot(t, U_TTR10, label='U_TTR')
+plt.plot(t, U_s, label='U_s')
+plt.xlim(0, 0.02)
+plt.ylim(-250, 250)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Tensión (kV)')
+plt.title('U_TTR a 90 km')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------
+# APARTADO 3: falta trifásica punto LX
+#--------------------------------------------------------------------------------------------------------------------------------------------
+# APARTADO A: TTR segunda lína 90 km
+R_s = Z1
+Y = w*C*1j - 1j/(w*L) + 1/R_s
+U = - U0/(w*L) * 1j * (1/Y)
+
+alpha = - 1 / (2*R_s*C)
+beta = math.sqrt(4/(L*C) - 1/(R_s**2 * C**2)) / 2
+A = - abs(U) * np.cos(np.angle(U))
+B = - abs(U) * w * (math.sin(np.angle(U)) + alpha*A) / beta
+
+t = np.arange(0, 0.02, 1e-6)
+U_TTR11 = abs(U) * np.cos(w*t - np.angle(U)) + (A*np.cos(beta*t) + B * np.sin(beta*t)) * np.exp(alpha*t)
+U_s = U0 * np.cos(w * t)
+
+plt.figure()
+plt.plot(t, U_TTR11, label='U_TTR')
+plt.plot(t, U_s, label='U_s')
+plt.xlim(0, 0.02)
+plt.ylim(-500, 500)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Tensión (kV)')
+plt.title('U_TTR con línea de 90 km')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# APARTADO B: TTR tramo lína 120 m entre barras e interruptor
