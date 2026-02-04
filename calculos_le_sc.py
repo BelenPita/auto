@@ -5,19 +5,15 @@ from math import pi
 from math import sqrt as raiz
 from math import log
 import cmath
-
-
 import io
 import sys
 
 buffer = io.StringIO()
 sys.stdout = buffer
 
-
-
 # Coeficientes
 mu0 = 4e-7 * pi # H/m
-epsilon0 = 8.854e-12  # Permisividad del vacío en F/m
+epsilon0 = 8.854e-12  # F/m
 
 
 # Valores linea
@@ -32,6 +28,7 @@ tiempo_accionamiento_proteccion = 0.5 # s
 altitud_media = 800
 
 # Caraterísticas conductor
+conductor = "LA-455"
 material = "Aluminio-Acero"
 composicion = "54+7"  
 diametro_alambre_ext = 3.08  # mm
@@ -48,6 +45,9 @@ coeficiente_absorcion = 0.5
 radiacion_invierno = 79 # W/m2
 radiacion_verano = 261 # W/m2
 velocidad_viento = 0.6 # m/s
+mc = 0.83
+mt_invierno = 0.8
+mt_verano = 1
 
 # Valores cable tierra
 resistencia_tierra = 0.33 # Ohmios
@@ -62,20 +62,101 @@ tres=(0.25,21.5066667)
 cuatro=(0,38.1166667)
 
 
+
+# Comparación los valores de diametro y resistencia de la parte superior con los valores de la normativa a partir del dato de conductor
+diametro_normativa = {
+    "LA-30": 7.14,
+    "LA-56": 9.45,
+    "LA-78": 11.34,
+    "LA-110": 14.0,
+    "LA-145": 15.75,
+    "LA-180": 17.5,
+    "LA-280": 21.8,
+    "LA-380": 25.38,
+    "LA-455": 27.72,
+    "LA-545": 30.42,
+    "LA-635": 32.85
+}
+resistencia_normativa = {
+    "LA-30": 1.0749,
+    "LA-56": 0.6136,
+    "LA-78": 0.4261,
+    "LA-110": 0.3066,
+    "LA-145": 0.2422,
+    "LA-180": 0.1962,
+    "LA-280": 0.1194,
+    "LA-380": 0.0857,
+    "LA-455": 0.0718,
+    "LA-545": 0.0596,
+    "LA-635": 0.0511
+}
+diametro_alambre_ext_normativa = {
+    "LA-30": 2.38,
+    "LA-56": 3.15,
+    "LA-78": 3.78,
+    "LA-110": 2,
+    "LA-145": 2.25,
+    "LA-180": 2.5,
+    "LA-280": 2.68,
+    "LA-380": 2.82,
+    "LA-455": 3.08,
+    "LA-545": 3.38,
+    "LA-635": 3.65
+}
+seccion_normativa = {
+    "LA-30": 31.1,
+    "LA-56": 54.6,
+    "LA-78": 78.6,
+    "LA-110": 116.2,
+    "LA-145": 147.1,
+    "LA-180": 181.6,
+    "LA-280": 281.1,
+    "LA-380": 381,
+    "LA-455": 454.5,
+    "LA-545": 547.3,
+    "LA-635": 636.6
+}
+composicion_normativa = {
+    "LA-30": "6+1",
+    "LA-56": "6+1",
+    "LA-78": "6+1",
+    "LA-110": "30+7",
+    "LA-145": "30+7",
+    "LA-180": "30+7",
+    "LA-280": "26+7",
+    "LA-380": "54+7",
+    "LA-455": "54+7",
+    "LA-545": "54+7",
+    "LA-635": "54+19"
+}
+
+diametro_calculado = diametro_normativa.get(conductor, None)
+resistencia_calculada = resistencia_normativa.get(conductor, None)
+diametro_alambre_ext_calculado = diametro_alambre_ext_normativa.get(conductor, None)
+seccion_calculada = seccion_normativa.get(conductor, None)
+composicion_calculada = composicion_normativa.get(conductor, None)
+print(f"Diámetro según normativa para {conductor}: {diametro_calculado} mm")
+print(f"Resistencia según normativa para {conductor}: {resistencia_calculada} Ω/km")
+print(f"Diámetro alambre exterior según normativa para {conductor}: {diametro_alambre_ext_calculado} mm")
+print(f"Sección según normativa para {conductor}: {seccion_calculada} mm2")
+print(f"Composición según normativa para {conductor}: {composicion_calculada}")
+
+
 # Cálculo de la resistencia a 85ºC y en ca
 print("\n1. RESISTENCIA ELÉCTRICA DE LA LÍNEA")
 def resistencia_a_temp(resistencia_20C, temp):
     return resistencia_20C * (1 + coef_temp * (temp - 20))
 resistencia_85C = resistencia_a_temp(resistencia, 85)
-print(f"Resistencia a 85ºC: {resistencia_85C:.6f} Ohmios")
+print(f"Resistencia a 85ºC: {resistencia_85C:.6f} Ω/km")
 
 reactancia_pelicular_85C = 10**-7 * 8 * pi * frecuencia * (1 / (resistencia_a_temp(resistencia, 85) / 1000))
-print(f"Reactancia por efecto pelicular a 85ºC: {reactancia_pelicular_85C:.6f} Ohmios")
+print(f"Reactancia por efecto pelicular a 85ºC: {reactancia_pelicular_85C:.6f} Ω/km")
 ys = reactancia_pelicular_85C ** 2 / (192 + 0.8*reactancia_pelicular_85C**2)
+print(f"Factor de efecto pelicular ys: {ys:.6f}")
 resistencia_ca = resistencia_85C * (1 + ys)
-print(f"Resistencia en CA a 85ºC: {resistencia_ca:.6f} Ohmios")
+print(f"Resistencia en CA a 85ºC: {resistencia_ca:.6f} Ω/km")
 r_ca_longitud = resistencia_ca * longitud
-print(f"Resistencia en CA para {longitud} km: {r_ca_longitud:.6f} Ohmios")
+print(f"Resistencia en CA para {longitud} km: {r_ca_longitud:.6f} Ω")
 
 
 # Cálculo matriz de impedancias
@@ -181,9 +262,9 @@ for i, fila in enumerate(matriz_Qij):
 
 # Resistencia de cada uno de los conductores (ultimo a tierra con dato de resistencia a tierra directamente)
 resistencias_conductores = [resistencia_ca, resistencia_ca, resistencia_ca, resistencia_tierra]
-print("\nResistencias de los conductores (Ohmios/km):")
+print("\nResistencias de los conductores (Ω/km):")
 for i, R in enumerate(resistencias_conductores):
-    print(f" {R:.4f} Ohmios/km")
+    print(f" {R:.4f} Ω/km")
 
 """
 # Radio equivalente de cada conductor
@@ -230,7 +311,7 @@ for i in range(n_puntos):
         else:
             Z_ij = (1j * mu0 * frecuencia * (log(D_prima_ij / D_ij)) + mu0 * 2 * frecuencia * (P_ij + 1j * Q_ij))*1000
             matriz_impedancias[i][j] = Z_ij
-print("\nMatriz de impedancias (Ohmios/km):")
+print("\nMatriz de impedancias (Ω/km):")
 for i, fila in enumerate(matriz_impedancias):
     print(f" ", end="")
     for Z in fila:
@@ -250,7 +331,7 @@ Zft = Z[0:3, 3:4]
 Ztf = Z[3:4, 0:3]
 Zt_inv = np.linalg.inv(Zt)
 Zfas = Zf - Zft @ Zt_inv @ Ztf
-print("\nMatriz de impedancias por fase (Ohmios/km):")
+print("\nMatriz de impedancias por fase (Ω/km):")
 for i, fila in enumerate(Zfas):
     print(f" ", end="")
     for Z in fila:
@@ -259,7 +340,7 @@ for i, fila in enumerate(Zfas):
 
 # Finalmente, multiplicar por la longitud de la línea para obtener las impedancias totales
 Zfas_total = Zfas * longitud
-print("\nMatriz de impedancias por fase total para la longitud dada (Ohmios):")
+print("\nMatriz de impedancias por fase total para la longitud dada (Ω):")
 for i, fila in enumerate(Zfas_total):
     print(f" ", end="")
     for Z in fila:
@@ -274,7 +355,7 @@ A = np.array([[1, 1, 1],
               [complex(-0.5, raiz(3)/2), complex(-0.5, -raiz(3)/2), 1]])
 A_inv = np.linalg.inv(A)
 Z_seq = A_inv @ Zfas @ A
-print("\nMatriz de impedancias de secuencia (Ohmios):")
+print("\nMatriz de impedancias de secuencia (Ω):")
 for i, fila in enumerate(Z_seq):
     print(f" ", end="")
     for Z in fila:
@@ -282,7 +363,7 @@ for i, fila in enumerate(Z_seq):
     print()
 
 # Matriz anterior de impedancias de secuencia pero con argumento y angulo
-print("\nMatriz de impedancias de secuencia con magnitud y ángulo (Ohmios):")
+print("\nMatriz de impedancias de secuencia con magnitud y ángulo (Ω):")
 for i, fila in enumerate(Z_seq):
     print(f"", end="")
     for Z in fila:
@@ -293,22 +374,22 @@ for i, fila in enumerate(Z_seq):
 
 # Impedancia homopolar de la linea (Z0)
 Z0 = Z_seq[2, 2]
-print(f"\nImpedancia homopolar de la línea (Z0): {Z0:.4f} Ohmios")
+print(f"\nImpedancia homopolar de la línea (Z0): {Z0:.4f} Ω")
 # Impedancia directa e inversa de la linea (Z1)
 Z1 = Z_seq[1, 1]
-print(f"Impedancia directa e inversa de la línea (Z1): {Z1:.4f} Ohmios")
+print(f"Impedancia directa e inversa de la línea (Z1): {Z1:.4f} Ω")
 
 
 #Teniendo en cuenta la longitud de la línea
 Z_seq_total = Z_seq * longitud
-print("\nMatriz de impedancias de secuencia total para la longitud dada (Ohmios):")
+print("\nMatriz de impedancias de secuencia total para la longitud dada (Ω):")
 for i, fila in enumerate(Z_seq_total):
     print(f"", end="")
     for Z in fila:
         print(f"{Z:18.4f}", end="  ")
     print()
 # Matriz anterior de impedancias de secuencia pero con argumento y angulo
-print("\nMatriz de impedancias de secuencia total con magnitud y ángulo para la longitud dada (Ohmios):")
+print("\nMatriz de impedancias de secuencia total con magnitud y ángulo para la longitud dada (Ω):")
 for i, fila in enumerate(Z_seq_total):
     print(f" ", end="")
     for Z in fila:
@@ -319,10 +400,10 @@ for i, fila in enumerate(Z_seq_total):
 
 # Impedancia homopolar de la linea (Z0)
 Z0_total = Z_seq_total[2, 2]
-print(f"\nImpedancia homopolar de la línea total (Z0): {Z0_total:.4f} Ohmios")
+print(f"\nImpedancia homopolar de la línea total (Z0): {Z0_total:.4f} Ω")
 # Impedancia directa e inversa de la linea (Z1)
 Z1_total = Z_seq_total[1, 1]
-print(f"Impedancia directa e inversa de la línea total (Z1): {Z1_total:.4f} Ohmios")
+print(f"Impedancia directa e inversa de la línea total (Z1): {Z1_total:.4f} Ω")
  
 
 
@@ -357,7 +438,7 @@ for i in range(n_puntos):
         else:
             C_ij = (1 / (2 * pi * epsilon0)) * log(D_prima_ij / D_ij)/1000000000
             matriz_capacidades[i][j] = C_ij
-print("\nMatriz de capacidades (km/uF):")
+print("\nMatriz de coeficientes de potencial de fase incluyendo cables de tierra (km/μF):")
 for i, fila in enumerate(matriz_capacidades):
     print(f" ", end="")
     for C in fila:
@@ -371,7 +452,7 @@ Cft = C[0:3, 3:4]
 Ctf = C[3:4, 0:3]
 Ct_inv = np.linalg.inv(Ct)
 Cfas = Cf - Cft @ Ct_inv @ Ctf
-print("\nMatriz de capacidades por fase (km/uF):")
+print("\nMatriz de coeficientes de potencial de fase (km/μF):")
 for i, fila in enumerate(Cfas):
     print(f" ", end="")
     for C in fila:
@@ -385,7 +466,7 @@ print("\n5. MATRIZ DE SUSCEPTANCIAS")
 # Matriz de susceptancias por km (B=j*2*pi*frecuencia*C^-1) solo parte imaginaria, no mostrando la parte real
 Cfas_inv = np.linalg.inv(Cfas)
 Bfas = 1j * 2 * pi * frecuencia * Cfas_inv
-print("\nMatriz de susceptancias por fase (uS/km):")
+print("\nMatriz de susceptancias por fase (μS/km):")
 for i, fila in enumerate(Bfas):
     print(f" ", end="")
     for B in fila:
@@ -394,7 +475,7 @@ for i, fila in enumerate(Bfas):
 
 # Matriz de susceptancias total para la longitud dada
 Bfas_total = Bfas * longitud
-print("\nMatriz de susceptancias por fase total para la longitud dada (uS):")
+print("\nMatriz de susceptancias por fase total para la longitud dada (μS):")
 for i, fila in enumerate(Bfas_total):
     print(f" ", end="")
     for B in fila:
@@ -402,7 +483,7 @@ for i, fila in enumerate(Bfas_total):
     print()
 # Susceptancias de secuencia
 B_seq = A_inv @ Bfas @ A
-print("\nMatriz de susceptancias de secuencia (uS):")
+print("\nMatriz de susceptancias de secuencia (μS):")
 for i, fila in enumerate(B_seq):
     print(f" ", end="")
     for B in fila:
@@ -410,16 +491,16 @@ for i, fila in enumerate(B_seq):
     print()
 # Susceptancia homopolar de la linea (B0)
 B0 = B_seq[2, 2]
-print(f"\nSusceptancia homopolar de la línea (B0): {B0:.4f} uS/km")
+print(f"\nSusceptancia homopolar de la línea (B0): {B0:.4f} μS/km")
 # Susceptancia directa e inversa de la linea (B1)
 B1 = B_seq[1, 1]
-print(f"Susceptancia directa e inversa de la línea (B1): {B1:.4f} uS/KM")
+print(f"Susceptancia directa e inversa de la línea (B1): {B1:.4f} μS/km")
 # Susceptancia homopolar de la linea total (B0)
 B0_total = B_seq[2, 2] * longitud
-print(f"\nSusceptancia homopolar de la línea total (B0): {B0_total:.4f} uS")
+print(f"\nSusceptancia homopolar de la línea total (B0): {B0_total:.4f} μS")
 # Susceptancia directa e inversa de la linea total (B1)
 B1_total = B_seq[1, 1] * longitud
-print(f"Susceptancia directa e inversa de la línea total (B1): {B1_total:.4f} uS")
+print(f"Susceptancia directa e inversa de la línea total (B1): {B1_total:.4f} μS")
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # CÁLCULO IMPEDANCIA CARACTERÍSTICA Y CONSTANTE DE PROPAGACIÓN
@@ -428,22 +509,20 @@ print("\n6. IMPEDANCIA CARACTERÍSTICA Y CONSTANTE DE PROPAGACIÓN")
 
 # Impedancia característica (Zc=raiz((R+jX)/(jB)))
 Zc = cmath.sqrt(Z1 / (1 * B1*1e-6))
-print(f"\nZc: {Zc:.4f}")
 magnitud_Zc = abs(Zc)
 angulo_Zc = math.degrees(math.atan2(Zc.imag, Zc.real))
-print(f"\nImpedancia característica de secuencia directa (Zc1): {magnitud_Zc:.4f} ∠ {angulo_Zc:.2f}° Ohmios")
+print(f"\nImpedancia característica de secuencia directa (Zc): {Zc:.4f} = {magnitud_Zc:.4f} ∠ {angulo_Zc:.2f}° Ω")
 
 # Constante de propagación (gamma=raiz((R+jX)*(jB)))
 gamma = cmath.sqrt(Z1 * (1 * B1*1e-6))
-print(f"\nGamma: {gamma:.4f}")
 magnitud_gamma = abs(gamma)
 angulo_gamma = math.degrees(math.atan2(gamma.imag, gamma.real))
-print(f"\nConstante de propagación de secuencia directa (γ1): {magnitud_gamma:.4f} ∠ {angulo_gamma:.2f}° 1/km")
+print(f"\nConstante de propagación (γ): {gamma:.6f} = {magnitud_gamma:.6f} ∠ {angulo_gamma:.2f}° 1/km")
 # Constante de propagación total para la longitud dada
 gamma_total = gamma * longitud
 magnitud_gamma_total = abs(gamma_total)
 angulo_gamma_total = math.degrees(math.atan2(gamma_total.imag, gamma_total.real))
-print(f"\nConstante de propagación para la longitud dada: {gamma_total:.4f} = {magnitud_gamma_total:.4f} ∠ {angulo_gamma_total:.2f}°")
+print(f"\nConstante de propagación para la longitud dada: {gamma_total:.6f} = {magnitud_gamma_total:.6f} ∠ {angulo_gamma_total:.2f}°")
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # POTENCIA CARACTERÍSTICA
@@ -454,7 +533,7 @@ print("\n7. POTENCIA CARACTERÍSTICA")
 Pc = (tension_nominal) ** 2 / Zc
 magnitud_Pc = abs(Pc)
 angulo_Pc = math.degrees(math.atan2(Pc.imag, Pc.real))
-print(f"\nPotencia característica: {Pc:.4f} = {magnitud_Pc:.4f} ∠ {angulo_Pc:.2f}° kVA")
+print(f"\nPotencia característica Pc: {Pc:.4f} = {magnitud_Pc:.4f} ∠ {angulo_Pc:.2f}° MVA")
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -464,10 +543,10 @@ print("\n8. CAIDA DE TENSIÓN")
 
 # AU=potencia_transportada(MW)*longitud*(R*cos(phi)+X*sin(phi))/((tension_nominal**2)*10*cos(phi))
 potencia_transportada_MW = potencia_transportada * cos_phi  # Convertir MVA a MW usando el factor de potencia
-AU = potencia_transportada_MW * 1000 * longitud * (Z1.real * cos_phi + Z1.imag * math.sin(math.acos(cos_phi))) / ((tension_nominal ** 2) * 10 * cos_phi)
-print(f"\nCaída de tensión AU: {AU:.4f} %")
+ΔU = potencia_transportada_MW * 1000 * longitud * (Z1.real * cos_phi + Z1.imag * math.sin(math.acos(cos_phi))) / ((tension_nominal ** 2) * 10 * cos_phi)
+print(f"\nCaída de tensión ΔU: {ΔU:.4f} %")
 # Poner si la caida de tension es inferior al 5%: La caída de tensión es inferior al 5%; y si no lo es: La caída de tensión es superior al 5%
-if AU < 5:
+if ΔU < 5:
     print("La caída de tensión es inferior al 5%")
 else:
     print("La caída de tensión es superior al 5%")
@@ -532,18 +611,22 @@ print(f"Densidad máxima de corriente con coeficiente reductor: {densidad_max_co
 intensidad_maxima_conductor = densidad_max_con_reduccion * seccion  # A
 print(f"Corriente máxima admisible del conductor: {intensidad_maxima_conductor:.2f} A")
 
+
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # POTENCIA MÁXIMA ADMISIBLE POR INTENSIDAD
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("\n10. POTENCIA MÁXIMA ADMISIBLE POR INTENSIDAD")
 
 potencia_maxima_admisible = (intensidad_maxima_conductor * tension_nominal * raiz(3)) * cos_phi 
-print(f"\nPotencia máxima admisible por intensidad: {potencia_maxima_admisible/1000:.2f} MVA")
+print(f"\nPotencia máxima admisible por intensidad: {potencia_maxima_admisible/1000:.2f} MW")
 # Comparar potencia máxima admisible con potencia transportada
 if potencia_maxima_admisible/1000 >= potencia_transportada_MW:
-    print("La potencia máxima admisible por intensidad es mayor que la potencia transportada.")
+    print("La potencia es mayor que la potenciia a transportar.")
 else:
-    print("La potencia máxima admisible por intensidad es menor que la potencia transportada.")
+    print("La potencia es menor que la potencia a transportar.")
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # POTENCIA DE TRANSPORTE EN FUNCIÓN DE CONDICIONES METEOROLÓGICAS
@@ -569,7 +652,6 @@ print(f"Calor cedido por radiación en verano: {Qr_verano:.3f} W/m")
 
 # Calor cedido por convección Qc = pi * conductividad_termica * (Tc - Ta) * Nu
 print("\n   11.3. CALOR CEDIDO POR CONVECCIÓN")
-
 # 1.  Convección natural: Nu = A * (Gr*Pr)^m
 print("\n       11.3.1. CONVECCIÓN NATURAL")
 
@@ -597,18 +679,16 @@ def viscosidad_cinematica(Tav):
     return 1.32e-5 + 9.5e-8 * Tav
 viscosidad_cinematica_invierno = viscosidad_cinematica((Tc + temperatura_invierno) / 2)
 viscosidad_cinematica_verano = viscosidad_cinematica((Tc + temperatura_verano) / 2)
-print(f"\nViscosidad cinemática en invierno: {viscosidad_cinematica_invierno:.8f} m2/s")
-print(f"Viscosidad cinemática en verano: {viscosidad_cinematica_verano:.8f} m2/s")
+print(f"\nViscosidad cinemática en invierno: {viscosidad_cinematica_invierno:.4e} m2/s")
+print(f"Viscosidad cinemática en verano: {viscosidad_cinematica_verano:.4e} m2/s")
 # densidad_relativa_aire = exp(-1.16e-4* h)
-
 def Gr(Ta, viscosidad_cinematica):
     Tav = (Tc + Ta) / 2
     return ((diametro/1000)**3 * (Tc - Ta) * g) / ((Tav + 273.15) * (viscosidad_cinematica**2))
 Gr_invierno = Gr(temperatura_invierno, viscosidad_cinematica_invierno)
 Gr_verano = Gr(temperatura_verano, viscosidad_cinematica_verano)
-print(f"\nNúmero de Grashof en invierno: {Gr_invierno:.2e}")
-print(f"Número de Grashof en verano: {Gr_verano:.2e}")
-
+print(f"\nNúmero de Grashof en invierno: {Gr_invierno:.2f}")
+print(f"Número de Grashof en verano: {Gr_verano:.2f}")
 # Pr = calor_esp_aire * viscosidad_dinamica / conductividad_termica_aire
 calor_esp_aire = 1005  # J/kgK
 # viscosidad_dinamica = (17.239 + 4.625e-2 * Tav - 2.03e-5 * Tav **2)e-6 kg/m s
@@ -631,8 +711,20 @@ Pr_verano = calor_esp_aire * viscosidad_dinamica_verano / conductividad_termica_
 print(f"\nNúmero de Prandtl en invierno: {Pr_invierno:.4f}")
 print(f"Número de Prandtl en verano: {Pr_verano:.4f}")
 
+
+"""
+Pr_invierno = 0.715 - 2.5e-4 * (Tc+temperatura_invierno)/2
+Pr_verano = 0.715 - 2.5e-4*(Tc+temperatura_verano)/2
+
+print(f"\nNúmero de Prandtl en invierno: {Pr_invierno:.4f}")
+print(f"Número de Prandtl en verano: {Pr_verano:.4f}")
+"""
+
 Gr_Pr_invierno = Gr_invierno * Pr_invierno
 Gr_Pr_verano = Gr_verano * Pr_verano
+print(f"\nNúmero Gr*Pr en invierno: {Gr_Pr_invierno:.2f}")
+print(f"\nNúmero Gr*Pr en verano: {Gr_Pr_verano:.2f}")
+
 Nu_invierno = 0
 Nu_verano = 0
 A_invierno, m_invierno = coeficientes_conveccion_natural(Gr_Pr_invierno)
@@ -644,58 +736,85 @@ if A_verano is not None:
 print(f"\nNúmero de Nusselt en invierno: {Nu_invierno:.4f}")
 print(f"Número de Nusselt en verano: {Nu_verano:.4f}")
 
+
 # 2. Convección forzada: Nu = B1 * Re^n
 print("\n       11.3.2. CONVECCIÓN FORZADA")
-
 # Re = (diametro/1000) * velocidad_viento / viscosidad_cinematica
 # Rugosidad: Rf = diametro_alambre_ext / (2*(diametro-diametro_alambe_ext))
 Rf = diametro_alambre_ext / (2 * (diametro - diametro_alambre_ext))
+print(f"\nRugosidad Rf: {Rf:.3f}")
+
 def Re(viscosidad_cinematica):
     return (diametro/1000) * velocidad_viento / viscosidad_cinematica
+Re_invierno = Re(viscosidad_cinematica_invierno)
+Re_verano = Re(viscosidad_cinematica_verano)
+print(f"\nNúmero de Reynolds en invierno: {Re_invierno:.2f}")
+print(f"Número de Reynolds en verano: {Re_verano:.2f}")
+
+"""
+def Re(viscosidad_cinematica):
+    return (diametro/1000) * velocidad_viento * math.exp(-1.16e-4*altitud_media) / viscosidad_cinematica
 Re_invierno = Re(viscosidad_cinematica_invierno)
 Re_verano = Re(viscosidad_cinematica_verano)
 print(f"\nNúmero de Reynolds en invierno: {Re_invierno:.2e}")
 print(f"Número de Reynolds en verano: {Re_verano:.2e}")
 
+"""
+
+"""Valores para parametros B_1 y n dependiendo del rango de Re:
+Para cualquier Rf si 100<Re<2.65e3: B1=0.641, n=0.471
+Para Rf<=0.05 y 2.65e3<Re<5e4: B1=0.178, n=0.633
+Para Rf>0.05 y 2.65e3<Re<5e4: B1=0.048, n=0.8"""
+def coeficientes_conveccion_forzada(Re, Rf):
+    if 100 < Re < 2.65e3:
+        return 0.641, 0.471
+    elif Rf <= 0.05 and 2.65e3 <= Re < 5e4:
+        return 0.178, 0.633
+    elif Rf > 0.05 and 2.65e3 <= Re < 5e4:
+        return 0.048, 0.8
+    else:
+        return None, None
+Nu_invierno_forzada = 0
+Nu_verano_forzada = 0
+B1_invierno, n_invierno = coeficientes_conveccion_forzada(Re_invierno, Rf)
+if B1_invierno is not None:
+    Nu_invierno_forzada = B1_invierno * (Re_invierno ** n_invierno)
+B1_verano, n_verano = coeficientes_conveccion_forzada(Re_verano, Rf)
+if B1_verano is not None:
+    Nu_verano_forzada = B1_verano * (Re_verano ** n_verano)
+print(f"\nNúmero de Nusselt por convección forzada en invierno: {Nu_invierno_forzada:.4f}")
+print(f"Número de Nusselt por convección forzada en verano: {Nu_verano_forzada:.4f}")
+
+Nu_45_invierno = Nu_invierno_forzada * (0.42 + 0.58*math.sin(45*pi/180)**0.9)
+Nu_45_verano = Nu_verano_forzada * (0.42 + 0.58*math.sin(45*pi/180)**0.9)
+print(f"\nNúmero de Nusselt corregido para ángulo de 45° en invierno: {Nu_45_invierno:.4f}")
+print(f"Número de Nusselt corregido para ángulo de 45° en verano: {Nu_45_verano:.4f}")
 
 
-
-
-
-
-Qc_invierno = 100.13
-Qc_verano =78.74
-
-
-
-
+# Qc = pi* conductividad_termica * (Tc-Ta) * Nu con Nu=max(Nu_natural, Nu_45_forzada)
+Qc_invierno = pi * conductividad_termica_aire_invierno * (Tc - temperatura_invierno) * max (Nu_invierno, Nu_45_invierno)
+Qc_verano = pi * conductividad_termica_aire_verano * (Tc - temperatura_verano) * max (Nu_verano, Nu_45_verano)
+print(f"\nCalor cedido por convección en invierno: {Qc_invierno:.3f} W/m")
+print(f"Calor cedido por convección en verano: {Qc_verano:.3f} W/m")
 
 
 # Resultados corriente máxima: I = raiz((Qr+Qc-Qs)/resistencia_ca/1000)
 print("\n   11.4. RESULTADOS CORRIENTE MÁXIMA")
-
 print(f"\nResistencia del conductor a la temperatura de cálculo: {resistencia_ca:.6f} Ohmios/km")
 I_max_invierno = raiz((Qr_invierno + Qc_invierno - Qs_invierno)/ (resistencia_ca * 1e-3))
 I_max_verano = raiz((Qr_verano + Qc_verano - Qs_verano) / (resistencia_ca * 1e-3))
 print(f"\nCorriente máxima admisible en invierno según condiciones meteorológicas: {I_max_invierno:.2f} A")
 print(f"Corriente máxima admisible en verano según condiciones meteorológicas: {I_max_verano:.2f} A")
 
+
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # POTENCIA MÁXIMA DE TRANSPORTE SEGÚN CONDICIONES METEOROLÓGICAS
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("\n   11.5. POTENCIA MÁXIMA DE TRANSPORTE")
-
 potencia_maxima_invierno = (I_max_invierno * tension_nominal * raiz(3)) * cos_phi
 potencia_maxima_verano = (I_max_verano * tension_nominal * raiz(3)) * cos_phi
-print(f"\nPotencia máxima de transporte en invierno según condiciones meteorológicas: {potencia_maxima_invierno/1000:.2f} MVA")
-print(f"Potencia máxima de transporte en verano según condiciones meteorológicas: {potencia_maxima_verano/1000:.2f} MVA")
-
-
-
-
-
-
-
+print(f"\nPotencia máxima de transporte en invierno según condiciones meteorológicas: {potencia_maxima_invierno/1000:.2f} MW")
+print(f"Potencia máxima de transporte en verano según condiciones meteorológicas: {potencia_maxima_verano/1000:.2f} MW")
 
 
 
@@ -705,12 +824,15 @@ print(f"Potencia máxima de transporte en verano según condiciones meteorológi
 # PÉRDIDAS DE POTENCIA
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("\n12. PÉRDIDAS DE POTENCIA")
-
+print(f"Pot transportada mw= {potencia_transportada_MW}")
 perdidas_potencia = ((potencia_transportada_MW * resistencia_ca * longitud) / (tension_nominal**2 * cos_phi**2))*100
 print(f"\nPérdidas de potencia en la línea: {perdidas_potencia:.5f} %")
 # En valor absoluto
 perdidas_potencia_valor = (potencia_transportada_MW * resistencia_ca * longitud) / (tension_nominal**2 * cos_phi**2) * potencia_transportada_MW
 print(f"Pérdidas de potencia en la línea en valor absoluto: {perdidas_potencia_valor:.5f} MW")
+
+
+
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # CORTOCIRCUITO MÁXIMO
@@ -757,16 +879,16 @@ if material == "Acero":
 else:
     temperatura_max_recomendada = 200
 
-
-
 # Factor K
 multiplicacion = log ((1+alpha_conductor*(temperatura_max_recomendada-20))/(1+alpha_conductor*(Tc-20)))
 print(f"multiplicación:", multiplicacion)
 K = (raiz (cte_conductor*c_conductor*densidad_conductor*multiplicacion/alpha_conductor))/1000000
-print(f"Factor K: {K} Araiz(s)/mm2")
+print(f"Factor K: {K} A*(s)^(1/2)/mm2")
 
 Icc_max = K * seccion / raiz(tiempo_accionamiento_proteccion)
 print(f"Icc max: {Icc_max} A")
+
+
 
 
 
@@ -794,13 +916,10 @@ print(f"DMG: {DMG}")
 DMG = 100 * ((matriz_distancias[0][1]*matriz_distancias[1][2]*matriz_distancias[2][0]*matriz_distancias[0][3]*matriz_distancias[1][3]*matriz_distancias[2][3])**(1/6))
 print(f"DMG: {DMG:.3f} cm") # con tierra
 
-DMG = 100 * ((matriz_distancias[0][1]*matriz_distancias[1][2]*matriz_distancias[2][3])**(1/3)) # cm
+DMG = 100 * ((matriz_distancias[0][1]*matriz_distancias[1][2]*matriz_distancias[2][0])**(1/3)) # cm
 print(f"DMG: {DMG:.1f} cm") # entre fases
 
 # Tensión crítica dieléctrica
-mc = 0.83
-mt_invierno = 0.8
-mt_verano = 1
 Ep = 21.21
 
 def Uc (mt,delta):
@@ -815,7 +934,6 @@ if Uc_invierno < tension_nominal:
     print(f"Hay pérdidas por efecto corona en invierno")
     Perdidas_efecto_corona_invierno = 241/delta_invierno * (frecuencia + 25) * raiz (diametro/20/DMG) * (tension_nominal - Uc_invierno)/raiz(3) * 1e-5
     print(f"Pérdidas por efecto corona en invierno: {Perdidas_efecto_corona_invierno:.2f} kW·km/fase")
-
 else: print(f"No hay pérdidas por efecto corona en invierno")
 
 if Uc_verano < tension_nominal:
@@ -837,6 +955,7 @@ for i, fila in enumerate(matriz_capacidades):
     for C in fila:
         print(f"{C:18.2f}", end="  ")
     print()
+
 # Matriz coeficientes de potencial inversa
 matriz_capacidades_inversa = np.linalg.inv(matriz_capacidades) * 1000
 print("\nMatriz de capacidades inversa(nF/km):")
@@ -860,7 +979,7 @@ for i, V in enumerate(V_vector):
 Q_vector = matriz_capacidades_inversa @ V_vector /1000
 print("\nVector de cargas (kV·nF/km):")
 for i, Q in enumerate(Q_vector):
-    print(f"{Q:.3f} kV·nF/km/1000=mC/km")
+    print(f"{Q:.3f} mC/km")
 
 # Campo eléctrico a 1 metro de altura sobre el suelo para distintos puntos bajo la linea de (-50 a 50 m, de 5 en 5 m) y valor máximo teniendo en cuenta que xi e yi son los puntos de cada qi (de los puntos anteriormente definidos como uno, dos, tres y cuatro)
 """
@@ -869,7 +988,7 @@ Ey=1/(2*pi*epsilon0)*sumatorio(Qi*((y-yi)/((x-xi)^2+(y-yi)^2)-(y+yi)/((x-xi)^2+(
 E=raiz(Ex^2+Ey^2)
 """
 print("\nCampo eléctrico a 1 m de altura sobre el suelo (kV/m):")
-epsilon0=8.854e-12 #F/m
+
 max_E = 0
 
 # Primero definimos posiciones xi, yi de los puntos uno, dos, tres y cuatro definidos anteriormente
@@ -977,38 +1096,23 @@ for x in range(-10, 10, 5):
 '''
 
 
+# Valor complejo de la corriente que circula por cada conductor
+I_phase = potencia_transportada * 1e6 / (raiz(3) * tension_nominal*1e3)
+I_vector = np.array([I_phase * cmath.rect(1, math.radians(0)),
+                     I_phase * cmath.rect(1, math.radians(-120)),
+                     I_phase * cmath.rect(1, math.radians(120))])
+print("\nVector de corrientes (A):")
+for i, I in enumerate(I_vector):
+    print(f"{I:.3f}")
 
 
 
 
 
-
-
-d12=math.sqrt((4.35+4.55)**2+4.4**2)
-d23=math.sqrt((2*4.35)**2+4.4**2)
-d31=2*4.4
-dmg=(d12*d23*d31)**(1/3)
-print(f"\nDMG entre fases: {dmg:.2f} m")
-
-
-
-d12=math.sqrt((4.3+4.1)**2+3.3**2)
-d23=math.sqrt((2*4.1)**2+3.3**2)
-d31=6.6
-dmg=(d12*d23*d31)**(1/3)
-print(f"\nDMG entre fases: {dmg:.2f} m")
-
-
-
-
-d12=math.sqrt((4.3+4.6)**2+3.3**2)
-d23=math.sqrt((2*4.3)**2+3.3**2)
-d31=6.6
-dmg=(d12*d23*d31)**(1/3)
-print(f"\nDMG entre fases: {dmg:.2f} m")
-
-
-
+resistencia_ca_final = resistencia * (1+7.5*frecuencia**2*(diametro/20)**4*1e-7)
+print(f"\nResistencia:{resistencia_ca_final:.6f}")
+r=resistencia_ca_final*(1+alpha_conductor*(Tc-20))
+print(f"\nResist: {r:.6f}")
 
 
 
