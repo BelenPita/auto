@@ -18,8 +18,8 @@ import pandas as pd
 
 print = st.write
 
+# Crear un buffer para capturar salidas de print
 buffer = io.StringIO()
-sys.stdout = buffer
 
 # Coeficientes
 mu0 = 4e-7 * pi # H/m
@@ -156,122 +156,301 @@ def load_parameters_from_excel(file_name="Cálculos eléctricos.xlsx"):
     return result
 
 
-# Sobreescribir valores desde el Excel "Cálculos eléctricos" si existe
-excel_params = load_parameters_from_excel("Cálculos eléctricos.xlsx")
-if not excel_params:
-    try:
-        excel_params = load_parameters_from_excel("Cálculos eléctricos")
-    except Exception:
-        excel_params = {}
+# Valores por defecto (sin depender del Excel)
+default_params = {
+    'tension_nominal': 220.00,
+    'tensionmaselevada': 145.00,
+    'frecuencia': 50.00,
+    'longitud': 0.3131,
+    'ndecircuitos': 1,
+    'ndeconductoresporfase': 1,
+    'distancia_conductores': 400.00,
+    'conductor': 'LA-110',
+    'material': 'Aluminio-Acero',
+    'cos_phi': 0.928,
+    'potencia_transportada': 140.00,
+    'tiempo_accionamiento_proteccion': 0.50,
+    'resistividad': 250.00,
+    'altitud_media': 800.00,
+    'coef_temp': 0.00403,
+    'Tc': 85.00,
+    'emisividad_conductor': 0.5,
+    'coeficiente_absorcion': 0.5,
+    'velocidad_viento': 0.5,
+    'seccion_tierra': 155.50,
+    'diametro_tierra': 18.00,
+    'resistencia_tierra': 0.33,
+    'coef_temp_tierra': 0.0000144,
+    'temperatura_invierno': 4.00,
+    'temperatura_verano': 19.00,
+    'radiacion_invierno': 79.00,
+    'radiacion_verano': 261.00,
+    'mc': 0.83,
+    'mt_invierno': 0.80,
+    'mt_verano': 1.00,
+    'uno_x': 2.300,
+    'uno_y': 30.2833333,
+    'dos_x': 4.350,
+    'dos_y': 24.2266667,
+    'tres_x': 0.25,
+    'tres_y': 21.5066667,
+    'cuatro_x': 0.000,
+    'cuatro_y': 38.1166667,
+    'cinco_x': 3,
+    'cinco_y': 2,
+    'seis_x': 3,
+    'seis_y': 4,
+    'tierra_x': 6,
+    'tierra_y': 3,
+}
 
-# Asignar valores leídos del Excel, sobrescribiendo los por defecto
-for varname, value in excel_params.items():
-    globals()[varname] = value
-    # También asignar al scope local para que el resto del código use estos valores
-    if varname == 'coef_temp':
-        coef_temp = value
-    elif varname == 'frecuencia':
-        frecuencia = value
-    elif varname == 'longitud':
-        longitud = value
-    elif varname == 'resistividad':
-        resistividad = value
-    elif varname == 'tension_nominal':
-        tension_nominal = value
-    elif varname == 'tensionmaselevada':
-        tensionmaselevada = value
-    elif varname == 'ndecircuitos':
-        ndecircuitos = value
-    elif varname == 'ndeconductoresporfase':
-        ndeconductoresporfase = value
-    elif varname == 'conductor':
-        conductor = value
-    elif varname == 'cos_phi':
-        cos_phi = value
-    elif varname == 'potencia_transportada':
-        potencia_transportada = value
-    elif varname == 'tiempo_accionamiento_proteccion':
-        tiempo_accionamiento_proteccion = value
-    elif varname == 'altitud_media':
-        altitud_media = value
-    elif varname == 'conductor':
-        conductor = value
-    elif varname == 'material':
-        material = value
-    elif varname == 'temperatura_invierno':
-        temperatura_invierno = value
-    elif varname == 'temperatura_verano':
-        temperatura_verano = value
-    elif varname == 'Tc':
-        Tc = value
-    elif varname == 'emisividad_conductor':
-        emisividad_conductor = value
-    elif varname == 'coeficiente_absorcion':
-        coeficiente_absorcion = value
-    elif varname == 'radiacion_invierno':
-        radiacion_invierno = value
-    elif varname == 'radiacion_verano':
-        radiacion_verano = value
-    elif varname == 'velocidad_viento':
-        velocidad_viento = value
-    elif varname == 'mc':
-        mc = value
-    elif varname == 'mt_invierno':
-        mt_invierno = value
-    elif varname == 'mt_verano':
-        mt_verano = value
-    elif varname == 'resistencia_tierra':
-        resistencia_tierra = value
-    elif varname == 'seccion_tierra':
-        seccion_tierra = value
-    elif varname == 'diametro_tierra':
-        diametro_tierra = value
-    elif varname == 'coef_temp_tierra':
-        coef_temp_tierra = value
-    elif varname == 'uno':
-        uno = value
-    elif varname == 'dos':
-        dos = value
-    elif varname == 'tres':
-        tres = value
-    elif varname == 'cuatro':
-        cuatro = value
-    elif varname == 'cinco':
-        cinco = value
-    elif varname == 'seis':
-        seis = value
-    elif varname == 'tierra':
-        tierra = value
-    elif varname == 'distancia_conductores':
-        distancia_conductores = value
+# Inicializar session_state con valores por defecto
+for varname, value in default_params.items():
+    if varname not in st.session_state:
+        st.session_state[varname] = value
 
-# Asegurar que las variables de puntos sean (x, y)
-def _ensure_point(p):
-    try:
-        if isinstance(p, (list, tuple)) and len(p) >= 2:
-            return (float(p[0]), float(p[1]))
-        if isinstance(p, str):
-            s = p.strip().replace(';', ',')
-            try:
-                v = ast.literal_eval(s)
-                if isinstance(v, (list, tuple)) and len(v) >= 2:
-                    return (float(v[0]), float(v[1]))
-            except Exception:
-                parts = s.split(',')
-                if len(parts) >= 2:
-                    return (float(parts[0]), float(parts[1]))
-    except Exception:
-        pass
-    return p
+# Configurar título
+st.set_page_config(layout="wide", page_title="Cálculos Eléctricos")
+st.title("Cálculos Eléctricos de Líneas")
+st.header("Parámetros de entrada")
 
-uno = _ensure_point(uno)
-dos = _ensure_point(dos)
-tres = _ensure_point(tres)
-cuatro = _ensure_point(cuatro)
-cinco = _ensure_point(cinco)
-seis = _ensure_point(seis)
-tierra = _ensure_point(tierra)
-puntos = [uno, dos, tres, cuatro, cinco, seis, tierra]
+# DATOS DE LÍNEA
+with st.expander("Datos de la Línea", expanded=True):
+    tension_nominal = st.number_input(
+        "Tensión nominal (kV)",
+        value=st.session_state['tension_nominal'],
+        format="%.2f",
+        key='tension_nominal'
+    )
+    tensionmaselevada = st.number_input(
+        "Tensión más elevada (kV)",
+        value=st.session_state['tensionmaselevada'],
+        format="%.2f",
+        key='tensionmaselevada'
+    )
+    frecuencia = st.number_input(
+        "Frecuencia (Hz)",
+        value=st.session_state['frecuencia'],
+        format="%.2f",
+        key='frecuencia'
+    )
+    longitud = st.number_input(
+        "Longitud (km)",
+        value=st.session_state['longitud'],
+        format="%.4f",
+        key='longitud'
+    )
+    ndecircuitos = st.selectbox(
+        "Número de circuitos",
+        options=[1, 2],
+        index=int(st.session_state['ndecircuitos']) - 1,
+        key='ndecircuitos'
+    )
+    ndeconductoresporfase = st.selectbox(
+        "Número de conductores por fase",
+        options=[1, 2, 3],
+        index=int(st.session_state['ndeconductoresporfase']) - 1,
+        key='ndeconductoresporfase'
+    )
+    if ndeconductoresporfase == 2:
+        distancia_conductores = st.number_input(
+            "Distancia entre conductores (mm)",
+            value=st.session_state['distancia_conductores'],
+            format="%.2f",
+            key='distancia_conductores'
+        )
+    else:
+        distancia_conductores = st.session_state['distancia_conductores']
+    conductor = st.selectbox(
+        "Tipo de conductor",
+        options=["LA-30", "LA-56", "LA-78", "LA-110", "LA-145", "LA-180", "LA-280", "LA-380", "LA-455", "LA-545", "LA-635"],
+        index=["LA-30", "LA-56", "LA-78", "LA-110", "LA-145", "LA-180", "LA-280", "LA-380", "LA-455", "LA-545", "LA-635"].index(st.session_state['conductor']),
+        key='conductor'
+    )
+    material = st.selectbox(
+        "Material del conductor",
+        options=["Cobre", "Aluminio-Acero", "Acero"],
+        index=["Cobre", "Aluminio-Acero", "Acero"].index(st.session_state['material']),
+        key='material'
+    )
+
+# DATOS DE POTENCIA Y PROTECCIÓN
+with st.expander("Potencia y Protección", expanded=True):
+    cos_phi = st.number_input(
+        "Factor de potencia (cos φ)",
+        value=st.session_state['cos_phi'],
+        min_value=0.0,
+        max_value=1.0,
+        step=0.01,
+        key='cos_phi'
+    )
+    potencia_transportada = st.number_input(
+        "Potencia transportada (MVA)",
+        value=st.session_state['potencia_transportada'],
+        format="%.2f",
+        key='potencia_transportada'
+    )
+    
+    tiempo_accionamiento_proteccion = st.number_input(
+        "Tiempo accionamiento protección (s)",
+        value=st.session_state['tiempo_accionamiento_proteccion'],
+        format="%.2f",
+        key='tiempo_accionamiento_proteccion'
+    )
+
+with st.expander("Parámetros del Terreno", expanded=False):
+    resistividad = st.number_input(
+        "Resistividad del terreno (Ω·m)",
+        value=st.session_state['resistividad'],
+        format="%.2f",
+        key='resistividad'
+    )
+    altitud_media = st.number_input(
+        "Altitud media (m)",
+        value=st.session_state['altitud_media'],
+        format="%.2f",
+        key='altitud_media'
+    )
+    coef_temp = st.number_input(
+        "Coeficiente de temperatura (1/ºC)",
+        value=st.session_state['coef_temp'],
+        format="%.6f",
+        key='coef_temp'
+    )
+with st.expander("Datos Térmicos del Conductor", expanded=False):
+    Tc = st.number_input(
+        "Temperatura del conductor (ºC)",
+        value=st.session_state['Tc'],
+        format="%.2f",
+        key='Tc'
+    )
+    emisividad_conductor = st.number_input(
+        "Emisividad del conductor",
+        value=st.session_state['emisividad_conductor'],
+        min_value=0.0,
+        max_value=1.0,
+        step=0.01,
+        key='emisividad_conductor'
+    )
+    coeficiente_absorcion = st.number_input(
+        "Coeficiente de absorción",
+        value=st.session_state['coeficiente_absorcion'],
+        min_value=0.0,
+        max_value=1.0,
+        step=0.01,
+        key='coeficiente_absorcion'
+    )
+    velocidad_viento = st.number_input(
+        "Velocidad del viento (m/s)",
+        value=st.session_state['velocidad_viento'],
+        format="%.2f",
+        key='velocidad_viento'
+    )
+with st.expander("Conductor de Tierra", expanded=False):
+    seccion_tierra = st.number_input(
+        "Sección del conductor tierra (mm²)",
+        value=st.session_state['seccion_tierra'],
+        format="%.2f",
+        key='seccion_tierra'
+    )
+    diametro_tierra = st.number_input(
+        "Diámetro del conductor tierra (mm)",
+        value=st.session_state['diametro_tierra'],
+        format="%.2f",
+        key='diametro_tierra'
+    )
+    resistencia_tierra = st.number_input(
+        "Resistencia del conductor tierra (Ω/km)",
+        value=st.session_state['resistencia_tierra'],
+        format="%.6f",
+        key='resistencia_tierra'
+    )
+    coef_temp_tierra = st.number_input(
+        "Coeficiente temp. tierra (1/ºC)",
+        value=st.session_state['coef_temp_tierra'],
+        format="%.6e",
+        key='coef_temp_tierra'
+    )
+with st.expander("Condiciones Locales", expanded=False):
+    temperatura_invierno = st.number_input(
+        "Temperatura invierno (ºC)",
+        value=st.session_state['temperatura_invierno'],
+        format="%.2f",
+        key='temperatura_invierno'
+    )
+    temperatura_verano = st.number_input(
+        "Temperatura verano (ºC)",
+        value=st.session_state['temperatura_verano'],
+        format="%.2f",
+        key='temperatura_verano'
+    )
+    radiacion_invierno = st.number_input(
+        "Radiación invierno (W/m²)",
+        value=st.session_state['radiacion_invierno'],
+        format="%.2f",
+        key='radiacion_invierno'
+    )
+    radiacion_verano = st.number_input(
+        "Radiación verano (W/m²)",
+        value=st.session_state['radiacion_verano'],
+        format="%.2f",
+        key='radiacion_verano'
+    )
+    mc = st.number_input(
+        "mc (Factor de riesgo)",
+        value=st.session_state['mc'],
+        step=0.01,
+        key='mc'
+    )
+    mt_invierno = st.number_input(
+        "mt invierno",
+        value=st.session_state['mt_invierno'],
+        step=0.01,
+        key='mt_invierno'
+    )
+    mt_verano = st.number_input(
+        "mt verano",
+        value=st.session_state['mt_verano'],
+        step=0.01,
+        key='mt_verano'
+    )
+with st.expander("Ubicación de Conductores", expanded=False):
+    uno_x = st.number_input("Punto 1 - X (m)", value=st.session_state['uno_x'], key='uno_x')
+    uno_y = st.number_input("Punto 1 - Y (m)", value=st.session_state['uno_y'], key='uno_y')
+    uno = (uno_x, uno_y)
+    
+    dos_x = st.number_input("Punto 2 - X (m)", value=st.session_state['dos_x'], key='dos_x')
+    dos_y = st.number_input("Punto 2 - Y (m)", value=st.session_state['dos_y'], key='dos_y')
+    dos = (dos_x, dos_y)
+    
+    tres_x = st.number_input("Punto 3 - X (m)", value=st.session_state['tres_x'], key='tres_x')
+    tres_y = st.number_input("Punto 3 - Y (m)", value=st.session_state['tres_y'], key='tres_y')
+    tres = (tres_x, tres_y)
+    
+    cuatro_x = st.number_input("Punto 4 - X (m)", value=st.session_state['cuatro_x'], key='cuatro_x')
+    cuatro_y = st.number_input("Punto 4 - Y (m)", value=st.session_state['cuatro_y'], key='cuatro_y')
+    cuatro = (cuatro_x, cuatro_y)
+    
+    if ndecircuitos == 2:
+        cinco_x = st.number_input("Punto 5 - X (m)", value=st.session_state['cinco_x'], key='cinco_x')
+        cinco_y = st.number_input("Punto 5 - Y (m)", value=st.session_state['cinco_y'], key='cinco_y')
+        cinco = (cinco_x, cinco_y)
+        
+        seis_x = st.number_input("Punto 6 - X (m)", value=st.session_state['seis_x'], key='seis_x')
+        seis_y = st.number_input("Punto 6 - Y (m)", value=st.session_state['seis_y'], key='seis_y')
+        seis = (seis_x, seis_y)
+        
+        tierra_x = st.number_input("Punto tierra - X (m)", value=st.session_state['tierra_x'], key='tierra_x')
+        tierra_y = st.number_input("Punto tierra - Y (m)", value=st.session_state['tierra_y'], key='tierra_y')
+        tierra = (tierra_x, tierra_y)
+    else:
+        cinco = (0, 0)
+        seis = (0, 0)
+        tierra_x = st.number_input("Punto tierra - X (m)", value=st.session_state['tierra_x'], key='tierra_x')
+        tierra_y = st.number_input("Punto tierra - Y (m)", value=st.session_state['tierra_y'], key='tierra_y')
+        tierra = (tierra_x, tierra_y)
+
+# Función para convertir puntos a tuplas
 def _xy(pt):
     try:
         if isinstance(pt, (list, tuple)) and len(pt) >= 2:
@@ -292,88 +471,36 @@ def _xy(pt):
         pass
     raise ValueError(f"Formato de punto inválido: {pt}")
 
-uno_x, uno_y = _xy(uno)
-dos_x, dos_y = _xy(dos)
-tres_x, tres_y = _xy(tres)
-cuatro_x, cuatro_y = _xy(cuatro)
-cinco_x, cinco_y = _xy(cinco)
-seis_x, seis_y = _xy(seis)
-tierra_x, tierra_y = _xy(tierra)
+# Matriz de puntos para cálculos posteriores
+puntos = [uno, dos, tres, cuatro, cinco, seis, tierra]
 
-
-print("\nDATOS")
-print("\nDatos línea")
-print(f"Tensión nominal: {tension_nominal} kV")
-print(f"Frecuencia: {frecuencia} Hz")
-print(f"Tensión más elevada: {tensionmaselevada} kV")
-print(f"Número de circuitos: {ndecircuitos}")
-print(f"Número de conductores por fase: {ndeconductoresporfase}")
-if ndeconductoresporfase==2:
-    print(f"Distancia entre conductores: {distancia_conductores}")
-print(f"Tipo de conductor: {conductor}")
-print(f"Longitud: {longitud} km")
-print(f"Altitud media: {altitud_media}")
-print(f"Factor de potencia: {cos_phi}")
-print(f"Potencia a transportar: {potencia_transportada} MVA")
-print(f"Coeficiente de temperatura: {coef_temp} 1/ºC")
-
-print(f"Tiempo accionamiento protección: {tiempo_accionamiento_proteccion} s")
-print(f"Resistividad terreno: {resistividad} Ω·m")
-print(f"Temperatura conductor: {Tc} ºC")
-
-print(f"\nEmisividad conductor: {emisividad_conductor}")
-print(f"Coeficiente absorción: {coeficiente_absorcion}")
-print(f"Velocidad viento: {velocidad_viento} m/s")
-
-print("\nDatos conductor tierra")
-print(f"Sección tierra: {seccion_tierra} mm²")
-print(f"Diámetro tierra: {diametro_tierra} mm")
-print(f"Resistencia tierra: {resistencia_tierra}")
-print(f"Coeficiente teperatura tierra: {coef_temp_tierra:2e}")
-
-
-
-print("\nUbicación conductores")
-if ndecircuitos==1:
-    print(f"Punto 1: {uno}")
-    print(f"Punto 2: {dos}")
-    print(f"Punto 3: {tres}")
-    print(f"Punto tierra: {cuatro}")
-elif ndecircuitos==2:
-    print(f"Punto 1: {uno}")
-    print(f"Punto 2: {dos}")
-    print(f"Punto 3: {tres}")
-    print(f"Punto 4: {cuatro}")    
-    print(f"Punto 5: {cinco}")  
-    print(f"Punto 6: {seis}")  
-    print(f"Punto tierra: {tierra}")  
-
-
-print("\nDatos localización")
-print(f"Temperatura invierno: {temperatura_invierno} ºC")
-print(f"Temperatura verano: {temperatura_verano} ºC")
-print(f"Radiación invierno: {radiacion_invierno} W/m²")
-print(f"Radiación verano: {radiacion_verano} W/m²")
-
-
-# Comparación los valores de diametro y resistencia de la parte superior con los valores de la normativa a partir del dato de conductor
+# Mostrar información del conductor seleccionado
 diametro_normativa = {"LA-30": 7.14,"LA-56": 9.45,"LA-78": 11.34,"LA-110": 14.0,"LA-145": 15.75,"LA-180": 17.5,"LA-280": 21.8,"LA-380": 25.38,"LA-455": 27.72,"LA-545": 30.42,"LA-635": 32.85}
 resistencia_normativa = {"LA-30": 1.0749, "LA-56": 0.6136, "LA-78": 0.4261,"LA-110": 0.3066,"LA-145": 0.2422,"LA-180": 0.1962,"LA-280": 0.1194,"LA-380": 0.0857,"LA-455": 0.0718,"LA-545": 0.0596,"LA-635": 0.0511}
 diametro_alambre_ext_normativa = {"LA-30": 2.38,"LA-56": 3.15,"LA-78": 3.78,"LA-110": 2,"LA-145": 2.25,"LA-180": 2.5,"LA-280": 2.68,"LA-380": 2.82,"LA-455": 3.08,"LA-545": 3.38,"LA-635": 3.65}
 seccion_normativa = {"LA-30": 31.1,"LA-56": 54.6,"LA-78": 78.6,"LA-110": 116.2,"LA-145": 147.1,"LA-180": 181.6,"LA-280": 281.1,"LA-380": 381,"LA-455": 454.5,"LA-545": 547.3,"LA-635": 636.6}
 composicion_normativa = {"LA-30": "6+1","LA-56": "6+1","LA-78": "6+1","LA-110": "30+7","LA-145": "30+7","LA-180": "30+7","LA-280": "26+7","LA-380": "54+7","LA-455": "54+7","LA-545": "54+7","LA-635": "54+19"}
-print(f"\nVALORES SEGÚN EL CONDUCTOR {conductor}")
+
 diametro_calculado = diametro_normativa.get(conductor, None)
 resistencia_calculada = resistencia_normativa.get(conductor, None)
 diametro_alambre_ext_calculado = diametro_alambre_ext_normativa.get(conductor, None)
 seccion_calculada = seccion_normativa.get(conductor, None)
 composicion_calculada = composicion_normativa.get(conductor, None)
-print(f"Diámetro: {diametro_calculado} mm")
-print(f"Resistencia: {resistencia_calculada} Ω/km")
-print(f"Diámetro alambre: {diametro_alambre_ext_calculado} mm")
-print(f"Sección: {seccion_calculada} mm²")
-print(f"Composición: {composicion_calculada}")
 
+st.subheader(f"Características del Conductor {conductor}")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.info(f"**Diámetro**\n{diametro_calculado} mm")
+with col2:
+    st.info(f"**Resistencia**\n{resistencia_calculada} Ω/km")
+with col3:
+    st.info(f"**Sección**\n{seccion_calculada} mm²")
+with col4:
+    st.info(f"**Composición**\n{composicion_calculada}")
+
+st.write("---")
+
+# Configurar variables para cálculos
 diametro = diametro_calculado
 seccion = seccion_calculada
 diametro_alambre_ext = diametro_alambre_ext_calculado
@@ -389,6 +516,44 @@ n_i = ndeconductoresporfase
 
 
 
+
+
+
+
+
+
+
+
+
+# Botón para ejecutar cálculos
+if st.button("🔄 Ejecutar Cálculos", use_container_width=True, type="primary"):
+    st.session_state.ejecutar_calculos = True
+else:
+    if 'ejecutar_calculos' not in st.session_state:
+        st.session_state.ejecutar_calculos = False
+
+if not st.session_state.ejecutar_calculos:
+    st.info("")
+    st.stop()
+
+# Si llegamos aquí, ejecutar los cálculos
+sys.stdout = buffer
+
+
+
+st.markdown("""
+<style>
+/* Reducir el tamaño de los headers y subheaders */
+h1 { font-size: 1.5em !important; }  /* st.title() */
+h2 { font-size: 1.3em !important; }  /* st.header() */
+h3 { font-size: 1.1em !important; }  /* st.subheader() */
+
+/* Opcional: ajustar st.latex() */
+.mathjax, .katex, .katex-display {
+    font-size: 0.95em !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -408,7 +573,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         return resistencia_20C * (1 + coef_temp * (temp - 20))
     # Cálculo de la resistencia a 85ºC y en ca
     st.header("\n1. RESISTENCIA ELÉCTRICA DE LA LÍNEA")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )
     resistencia_85C = resistencia_a_temp(resistencia, Tc)
     print(f"Resistencia a {Tc:.2f}ºC: {resistencia_85C:.6f} Ω/km")
     reactancia_pelicular_85C = 10**-7 * 8 * pi * frecuencia * (1 / (resistencia_a_temp(resistencia, Tc) / 1000))
@@ -423,9 +591,11 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # CÁLCULO MATRIZ IMPEDANCIAS
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Cálculo matriz de impedancias
     st.header("\n2. MATRIZ DE IMPEDANCIAS")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )    
     st.write("""
     El cálculo de la matriz de impedancias se realiza mediante la teoría de Carson. 
     De este modo se calcula la impedancia propia y mutua de todos los conductores 
@@ -469,8 +639,33 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Q_{i,j} = \frac{1}{2} \cdot \ln \left( \frac{1.85138}{k_{i,j}} \right)
     + \frac{k_{i,j} \cdot \cos(\theta_{i,j})}{3 \sqrt{2}}
     """)
+    
+    st.write("Donde:")
+    st.latex(r"""
+    k_{i,j} = \frac{\sqrt{2}\, D'_{i,j}}{\delta}
+    """)
+    st.latex(r"""
+    \cos(\theta_{i,j}) = \frac{h_i + h_j}{D'_{i,j}}
+    """)
+    st.write("""
+    Siendo $\\delta$ la penetración del terreno según la ecuación:
+    """)
+    st.latex(r"""
+    \delta =
+    \sqrt{
+    \frac{\rho_t}
+    {\pi \, f \, \mu_0 \, \mu_r}
+    }
+    """)
+    st.markdown("""
+    Donde:
+    - $\\rho_t$ es la resistividad del terreno en $\\Omega\,m$  
+    - $f$ es la frecuencia en Hz  
+    - $\\mu_0$ es la permeabilidad del vacío  
+    - $\\mu_r$ es la permeabilidad relativa del terreno (generalmente 1)
+    """)
     penetracion_terreno = raiz(resistividad/(pi*frecuencia*mu0))
-    print(f"Penetración terreno: {penetracion_terreno:.4f} m")
+    st.latex(r"\delta = \sqrt{\frac{" + f"{resistividad:.0f}" + r"}{\pi \cdot " + f"{frecuencia:.0f}" +r" \cdot 4 \cdot \pi \cdot 10^{-7} \cdot 1}} = " + f"{penetracion_terreno:.4f}" + " \, m")
     # Matriz de distancias
     puntos = [uno, dos, tres, cuatro]
     n_puntos = len(puntos)
@@ -494,22 +689,22 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         except Exception:
             pass
         raise ValueError(f"Formato de punto inválido: {pt}")
-
     for i in range(n_puntos):
         for j in range(n_puntos):
             x1, y1 = _xy(puntos[i])
             x2, y2 = _xy(puntos[j])
             distancia = raiz((x2-x1)**2 + (y2-y1)**2)
             matriz_distancias[i][j] = distancia
-    print("\nMatriz de distancias (km):")
+    st.markdown("""Con el promedio de posiciones de los conductores, se calculan tanto la distancia entre los cables ocmo la distancia espejo respecto al suelo.""")
+    print("\nLas distancias entre todos los conductores de la línea son:")
     df=pd.DataFrame(matriz_distancias).round(4)
-    latex_matrix = r"D = \begin{bmatrix}"
+    latex_matrix = r"D = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{m}"
     st.latex(latex_matrix)
-
     # Matriz D_prima: distancia entre puntos y sus espejos respecto al suelo
     matriz_D_prima = [[0]*n_puntos for _ in range(n_puntos)]
     for i in range(n_puntos):
@@ -520,26 +715,27 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             x2_espejo, y2_espejo = x2, -y2
             distancia = raiz((x2_espejo-x1)**2 + (y2_espejo-y1)**2)
             matriz_D_prima[i][j] = distancia
-    print("\nMatriz D' (distancias entre puntos y espejos) (km):")
+    print("\nLas distancias entre conductores y el espejo respecto al suelo de los mismos para la línea es:")
     df=pd.DataFrame(matriz_D_prima).round(4)
-    latex_matrix = r"D' = \begin{bmatrix}"
+    latex_matrix = r"D' = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{m}"
     st.latex(latex_matrix)
     # kij = raiz(2)*D_prima_ij / penetracion_terreno
     matriz_kij = [[0]*n_puntos for _ in range(n_puntos)]
     for i in range(n_puntos):
         for j in range(n_puntos):
             matriz_kij[i][j] = raiz(2) * matriz_D_prima[i][j] / penetracion_terreno  
-    st.write("\nMatriz k_ij:")
+    st.write("\nEl factor k para los conductores será:")
     df=pd.DataFrame(matriz_kij).round(4)
-    latex_matrix = r"k_{ij} = \begin{bmatrix}"
+    latex_matrix = r"k_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # P_ij = pi/8 - k_ij*cos(tetha_ij)/(3*raiz(2)) siendo cos(tetha_ij) = (h_i + h_j )/ D_prima_ij
     matriz_Pij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -555,13 +751,13 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             k_ij = matriz_kij[i][j]
             P_ij = (pi / 8) - (k_ij * cos_tetha_ij) / (3 * raiz(2))
             matriz_Pij[i][j] = P_ij
-    print("\nMatriz P_ij:")
+    print("\nEl factor P, que representa la parte real dela impedancia del terreno, según la teoría de Carson es:")
     df=pd.DataFrame(matriz_Pij).round(4)
-    latex_matrix = r"P_{ij} = \begin{bmatrix}"
+    latex_matrix = r"P_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Q_ij = 0.5*log neperiano(1.85138/k_ij) + k_ij*cos(tetha_ij)/(3*raiz(2))
     matriz_Qij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -580,23 +776,23 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             else:
                 Q_ij = 0
             matriz_Qij[i][j] = Q_ij
-    print("\nMatriz Q_ij:")
+    print("\nY el factor Q, que es la parte imaginaria de la impedancia que representa el terreno:")
     df=pd.DataFrame(matriz_Qij).round(4)
-    latex_matrix = r"Q_{ij} = \begin{bmatrix}"
+    latex_matrix = r"Q_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Resistencia de cada uno de los conductores (ultimo a tierra con dato de resistencia a tierra directamente)
     resistencias_conductores = [resistencia_ca, resistencia_ca, resistencia_ca, resistencia_tierra]
-    print("\nResistencias de los conductores:")
+    print("\nLa resistencia de cada uno de los conductores considerados es:")
     df=pd.DataFrame(resistencias_conductores).round(4)
-    latex_matrix = r"R = \begin{bmatrix}"
+    latex_matrix = r"R = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
     # Radio de cada conductor en mm
@@ -606,13 +802,13 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         diametro / 2,
         diametro_tierra / 2
     ]
-    print("\nRadio de los conductores (mm):")
+    print("\nEl radio equivalente de cada uno de los conductores es:")
     df=pd.DataFrame(radio_conductores_mm).round(4)
-    latex_matrix = r"Radio = \begin{bmatrix}"
+    latex_matrix = r"Radio = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\text{mm}"
     st.latex(latex_matrix)
     # Matriz de impedancias con:
@@ -634,18 +830,18 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             else:
                 Z_ij = (1j * mu0 * frecuencia * (log(D_prima_ij / D_ij)) + mu0 * 2 * frecuencia * (P_ij + 1j * Q_ij))*1000
                 matriz_impedancias[i][j] = Z_ij
-    print("\nMatriz de impedancias (Ω/km):")
+    print("\nPor tanto, la matriz de impedancias de fase de la línea, incluyendo cables de tierra, será:(Ω/km):")
     df=pd.DataFrame(matriz_impedancias).round(4)
-    latex_matrix = r"Z = \begin{bmatrix}"
+    latex_matrix = r"Z = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
     # Como la linea posee cable de tierra, es necesario realizar un análisis matricial para eliminarlos y obtener una matriz 3*3 que representa las impedancias por fase
     # Z=[Zf, Zft; Ztf, Zt]
     # Zfas = Zf - Zft * inv(Zt) * Ztf
-
     Z = np.array(matriz_impedancias)
     Zf = Z[0:3, 0:3]
     Zt = Z[3:4, 3:4]
@@ -653,45 +849,88 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Ztf = Z[3:4, 0:3]
     Zt_inv = np.linalg.inv(Zt)
     Zfas = Zf - Zft @ Zt_inv @ Ztf
-    print("\nMatriz de impedancias por fase (Ω/km):")
+    print("\nComo la línea posee cable de tierra, es necesario realizar un análisis matricial para eliminarlos y obtener una matriz 3x3 que representa las impedancias por fase:")
+    st.latex(r"""
+    Z =
+    \begin{pmatrix}
+    Z_f & Z_{ft} \\
+    Z_{tf} & Z_{tt}
+    \end{pmatrix}
+    """)
+    st.latex(r"""
+    Z_{fas} =
+    Z_f
+    -
+    Z_{ft}
+    Z_{tt}^{-1}
+    Z_{tf}
+    """)
+    st.markdown("""El resultado del cálculo es la matriz de impedancias de fase:""")
     df=pd.DataFrame(Zfas).round(4)
-    latex_matrix = r"Z_{fas} = \begin{bmatrix}"
+    latex_matrix = r"Z_{fas} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
     # Finalmente, multiplicar por la longitud de la línea para obtener las impedancias totales
     Zfas_total = Zfas * longitud
-    print("\nMatriz de impedancias por fase total para la longitud dada (Ω):")
+    print(f"\nCon la longitud total media de la línea de {longitud} km:")
     df=pd.DataFrame(Zfas_total).round(4)
-    latex_matrix = r"Z_{fas} = \begin{bmatrix}"
+    latex_matrix = r"Z_{fas} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω}"
     st.latex(latex_matrix)
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # IMPEDANCIAS DE SECUENCIA
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n3. IMPEDANCIAS DE SECUENCIA")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
+    st.markdown("""La matriz de impedancias de secuencia será el resultado de realizar la siguiente operación matricial:""")
+    st.latex(r"""
+    Z_{012} = H^{-1} \, Z_{fas} \, H
+    """)
+    st.latex(r"""h = e^{j120^\circ} = -0.5 + j \frac{\sqrt{3}}{2}""")
+    st.latex(r"""
+    H =
+    \begin{pmatrix}
+    1 & 1 & 1 \\
+    1 & h^2 & h \\
+    1 & h & h^2
+    \end{pmatrix}
+    """)
+    st.latex(r"""
+    H^{-1} =
+    \frac{1}{3}
+    \begin{pmatrix}
+    1 & 1 & 1 \\
+    1 & h & h^2 \\
+    1 & h^2 & h
+    \end{pmatrix}
+    """)
     A = np.array([[1, 1, 1],
                 [complex(-0.5, -raiz(3)/2), complex(-0.5, raiz(3)/2), 1],
                 [complex(-0.5, raiz(3)/2), complex(-0.5, -raiz(3)/2), 1]])
     A_inv = np.linalg.inv(A)
     Z_seq = A_inv @ Zfas @ A
-    print("\nMatriz de impedancias de secuencia (Ω):")
+    print("\nEl resultado del cálculo es:")
     df=pd.DataFrame(Z_seq).round(4)
-    latex_matrix = r"Z_{012} = \begin{bmatrix}"
+    latex_matrix = r"Z_{012} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
     # Matriz anterior de impedancias de secuencia pero con argumento y angulo
-    print("\nMatriz de impedancias de secuencia con magnitud y ángulo (Ω):")
-    latex_matrix = r"Z_{012} = \begin{bmatrix}"
+    latex_matrix = r"Z_{012} = \begin{pmatrix}"
     for fila in Z_seq:
         elementos = []
         for Z in fila:
@@ -703,27 +942,30 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         
         latex_matrix += " & ".join(elementos)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
     # Impedancia homopolar de la linea (Z0)
     Z0 = Z_seq[2, 2]
-    print(f"\nImpedancia homopolar de la línea (Z0): {Z0:.4f} Ω")
+    print(f"\nImpedancia homopolar de la línea")
+    st.latex(r"Z_0 = " + f"{Z0:.4f}" + r" \, \Omega / km")
     # Impedancia directa e inversa de la linea (Z1)
     Z1 = Z_seq[1, 1]
-    print(f"Impedancia directa e inversa de la línea (Z1): {Z1:.4f} Ω")
+    print(f"Impedancia directa e inversa de la línea:")
+    st.latex(r"Z_1 = " + f"{Z1:.4f}" + r" \, \Omega / km")
     #Teniendo en cuenta la longitud de la línea
     Z_seq_total = Z_seq * longitud
-    print("\nMatriz de impedancias de secuencia total para la longitud dada (Ω):")
+    print(f"\nCon la longitud de la línea de {longitud} km:")
     df=pd.DataFrame(Z_seq_total).round(4)
-    latex_matrix = r"Z_{012} = \begin{bmatrix}"
+    latex_matrix = r"Z_{012} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω}"
     st.latex(latex_matrix)
     # Matriz anterior de impedancias de secuencia pero con argumento y angulo
-    print("\nMatriz de impedancias de secuencia total con magnitud y ángulo para la longitud dada (Ω):")
-    latex_matrix = r"Z_{012} = \begin{bmatrix}"
+    latex_matrix = r"Z_{012} = \begin{pmatrix}"
     for fila in Z_seq_total:
         elementos = []
         for Z in fila:
@@ -734,26 +976,31 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             )
         latex_matrix += " & ".join(elementos)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text{Ω}"
     st.latex(latex_matrix)
     Z0_total = Z_seq_total[2, 2]
-    print(f"\nImpedancia homopolar de la línea total (Z0): {Z0_total:.4f} Ω")
+    st.latex(r"Z_0 = " + f"{Z0_total:.4f}" + r" \, \Omega")
     Z1_total = Z_seq_total[1, 1]
-    print(f"Impedancia directa e inversa de la línea total (Z1): {Z1_total:.4f} Ω")
+    st.latex(r"Z_1 = " + f"{Z1_total:.4f}" + r" \, \Omega")
     # Resistencias R0/R1
     R0 = Z0.real
     R1 = Z1.real
-    print(f"\nR0/R1: {R0/R1:.3f}")
     # Reactancias X0/X1
     X0 = Z0.imag
     X1 = Z1.imag
-    print(f"X0/X1: {X0/X1:.3f}")
+    st.latex(r"\frac{R_0}{R_1} = \frac{" + f"{R0:.4f}" + r"}{" + f"{R1:.4f}" + r"} = " + f"{R0/R1:.3f}")
+    st.latex(r"\frac{X_0}{X_1} = \frac{" + f"{X0:.4f}" + r"}{" + f"{X1:.4f}" + r"} = " + f"{X0/X1:.3f}")
+
 
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # MATRIZ DE CAPACIDADES
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n4. MATRIZ DE CAPACIDADES")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     st.write("""
     El cálculo de la matriz de capacidades de la línea se realiza mediante la matriz de coeficientes de potencial que liga el potencial eléctrico con la carga. La ecuación general en forma matricial es:
     """)
@@ -800,13 +1047,12 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             else:
                 C_ij = (1 / (2 * pi * epsilon0)) * log(D_prima_ij / D_ij)/1000000000
                 matriz_capacidades[i][j] = C_ij
-
     df=pd.DataFrame(matriz_capacidades).round(4)
-    latex_matrix = r"P = \begin{bmatrix}"
+    latex_matrix = r"P = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\text{km}/\mu\text{F}"
     st.latex(latex_matrix)
     # Matriz de capacitancias por fase (eliminando tierra)
@@ -846,11 +1092,11 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Ct_inv = np.linalg.inv(Ct)
     Cfas = Cf - Cft @ Ct_inv @ Ctf
     df=pd.DataFrame(Cfas).round(4)
-    latex_matrix = r"P_{fas} = \begin{bmatrix}"
+    latex_matrix = r"P_{fas} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\text{km}/\mu\text{F}"
     st.latex(latex_matrix)
 
@@ -858,85 +1104,147 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # MATRIZ DE SUSCEPTANCIAS
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n5. MATRIZ DE SUSCEPTANCIAS")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     st.write("""La matriz de susceptancias de la línea será el producto de la pulsación por la inversa de la matriz de coeficientes de potencial:""")
     st.latex(r"B = jwP^{-1}")
     # Matriz de susceptancias por km (B=j*2*pi*frecuencia*C^-1) solo parte imaginaria, no mostrando la parte real
     Cfas_inv = np.linalg.inv(Cfas)
     Bfas = 1j * 2 * pi * frecuencia * Cfas_inv
     df=pd.DataFrame(Bfas).round(4)
-    latex_matrix = r"B = \begin{bmatrix}"
+    latex_matrix = r"B = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}/\text{km}"
     st.latex(latex_matrix)
     # Matriz de susceptancias total para la longitud dada
     Bfas_total = Bfas * longitud
     st.markdown(f"""Con la longitud de la línea de {longitud} km, se obtiene:""")
     df=pd.DataFrame(Bfas_total).round(4)
-    latex_matrix = r"B = \begin{bmatrix}"
+    latex_matrix = r"B = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}"
     st.latex(latex_matrix)
     # Susceptancias de secuencia
+    st.write("""
+    La matriz de susceptancia de secuencia será el resultado de realizar la siguiente operación matricial:
+    """)
+    st.latex(r"""
+    B_{012} = H^{-1} \, B_{fas} \, H
+    """)
+    st.write("""
+    La matriz $H$ se definió en el apartado anterior:
+    """)
+    st.latex(r"""
+    H =
+    \begin{pmatrix}
+    1 & 1 & 1 \\
+    1 & h^2 & h \\
+    1 & h & h^2
+    \end{pmatrix}
+    """)
+    st.latex(r"""
+    H^{-1} =
+    \frac{1}{3}
+    \begin{pmatrix}
+    1 & 1 & 1 \\
+    1 & h & h^2 \\
+    1 & h^2 & h
+    \end{pmatrix}
+    """)
+    st.write("""
+    El resultado del cálculo es:
+    """)
     B_seq = A_inv @ Bfas @ A
-    print("\nMatriz de susceptancias de secuencia:")
     df=pd.DataFrame(B_seq).round(4)
-    latex_matrix = r"B_{012} = \begin{bmatrix}"
+    latex_matrix = r"B_{012} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}"
 
     st.latex(latex_matrix)
     B0 = B_seq[2, 2]
-    print(f"\nSusceptancia homopolar de la línea (B0): {B0:.4f} μS/km")
+    print(f"\nLa susceptancia homopolar de la línea es:")
+    st.latex(
+        rf"B_0 = {B0.imag:.4f}j\, \mu S/km"
+    )
     B1 = B_seq[1, 1]
-    print(f"Susceptancia directa e inversa de la línea (B1): {B1:.4f} μS/km")
+    print(f"La susceptancia directa e inversa de la línea será:")
+    st.latex(
+        rf"B_1 = {B1.imag:.4f}j\, \, \mu S/km"
+    )
     B0_total = B_seq[2, 2] * longitud
-    print(f"\nSusceptancia homopolar de la línea total (B0): {B0_total:.4f} μS")
+    print(f"\nCon la longistu de la línea de {longitud} km: ")
     B1_total = B_seq[1, 1] * longitud
-    print(f"Susceptancia directa e inversa de la línea total (B1): {B1_total:.4f} μS")
-
+    st.latex(
+        rf"B_{0} = {B0_total.imag:.4f}j\,\mu S"
+    )
+    st.latex(
+        rf"B_{1} = {B1_total.imag:.4f}j\,\mu S"
+    )
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # CÁLCULO IMPEDANCIA CARACTERÍSTICA Y CONSTANTE DE PROPAGACIÓN
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n6. IMPEDANCIA CARACTERÍSTICA Y CONSTANTE DE PROPAGACIÓN")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
+    st.write("""Se define la impedancia característica de la línea como:""")
+    st.latex(r"Z_c = \sqrt{\frac{R+jX}{jB}}")
     # Impedancia característica (Zc=raiz((R+jX)/(jB)))
     Zc = cmath.sqrt(Z1 / (1 * B1*1e-6))
     magnitud_Zc = abs(Zc)
     angulo_Zc = math.degrees(math.atan2(Zc.imag, Zc.real))
-    print(f"\nImpedancia característica de secuencia directa (Zc): {Zc:.4f} = {magnitud_Zc:.4f} ∠ {angulo_Zc:.2f}° Ω")
+    st.write("""Los valores de impedancia y admitancia de secuancia directa en la línea se han calculado previamente, por tanto se obtiene:""")
+    # Ahora volver a escribir la formula de Zc y luego con los valores de Z1 y B1 mas los resultados
+    st.latex(
+        rf"Z_c = \sqrt{{\frac{{{Z1:.4f}}}{{{B1.imag:.4f}j}}}}"
+        rf"={Zc:.4f}"
+        rf"={magnitud_Zc:.4f}\angle {angulo_Zc:.2f}^\circ \,\Omega"
+    )
     # Constante de propagación (gamma=raiz((R+jX)*(jB)))
     gamma = cmath.sqrt(Z1 * (1 * B1*1e-6))
     magnitud_gamma = abs(gamma)
     angulo_gamma = math.degrees(math.atan2(gamma.imag, gamma.real))
-    print(f"\nConstante de propagación (γ): {gamma:.6f} = {magnitud_gamma:.6f} ∠ {angulo_gamma:.2f}° 1/km")
+
     # Constante de propagación total para la longitud dada
     gamma_total = gamma * longitud
     magnitud_gamma_total = abs(gamma_total)
     angulo_gamma_total = math.degrees(math.atan2(gamma_total.imag, gamma_total.real))
-    print(f"\nConstante de propagación para la longitud dada: {gamma_total:.6f} = {magnitud_gamma_total:.6f} ∠ {angulo_gamma_total:.2f}°")
 
+    st.write("""La constante de propagación será:""")
+    st.latex(
+        rf"\gamma = \sqrt{{(R+jX)(jB)}}"
+        rf"=\sqrt{{({Z1.real:.4f}+{Z1.imag:.4f}j)({B1.imag:.4f}j)}}"
+        rf"={gamma:.6f}"
+        rf"={magnitud_gamma:.6f}\angle {angulo_gamma:.2f}^\circ \,1/km"
+    )
+    st.write("""\nDada la longitud de la línea:""")
+    st.latex(rf"\gamma \cdot L = {gamma_total:.6f} = {magnitud_gamma_total:.6f}\angle {angulo_gamma_total:.2f}^\circ")
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # POTENCIA CARACTERÍSTICA
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n7. POTENCIA CARACTERÍSTICA")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     print("\nLa potencia característica de la línea es función de la tensión y de la impedancia característica a través de la siguiente expresión:")
     st.latex(r"P_c=\frac{U^2}{Z_c}")
     # Pc = tension_nominal**2 / Zc
     Pc = (tension_nominal) ** 2 / Zc
     magnitud_Pc = abs(Pc)
     angulo_Pc = math.degrees(math.atan2(Pc.imag, Pc.real))
-    print(f"\nPotencia característica Pc: {Pc:.4f} = {magnitud_Pc:.4f} ∠ {angulo_Pc:.2f}° MVA")
     st.write("\nPara los valores de la línea:")
     st.latex(
         rf"P_c=\frac{{U^2}}{{Z_c}}"
@@ -944,11 +1252,15 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         rf"={Pc:.4f}"
         rf"={magnitud_Pc:.4f}\angle {angulo_Pc:.2f}^\circ \,\text{{MVA}}"
     )
+
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # CAIDA DE TENSIÓN
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n8. CAIDA DE TENSIÓN")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     print("\nLa caída de tensión por resistencia y reactancia de una línea (despreciendo la influencia de la capacidad) viene dada por las fórmulas:")
     st.latex(r"\Delta U = \frac{P \cdot L \cdot (R \cdot \cos(\varphi) + X \cdot \sin(\varphi))}{U^2 \cdot 10 \cdot \cos(\varphi)}")
     # AU=potencia_transportada(MW)*longitud*(R*cos(phi)+X*sin(phi))/((tension_nominal**2)*10*cos(phi))
@@ -969,7 +1281,30 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # DENSIDAD MÁXIMA DE CORRIENTE E INTENSIDAD MÁXIMA POR CABLE
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n9. DENSIDAD MÁXIMA DE CORRIENTE E INTENSIDAD MÁXIMA POR CABLE")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
+    st.write("""
+    La densidad máxima admisible de corriente en régimen permanente para corriente alterna 
+    y frecuencia de 50 Hz se deduce de la tabla 11 recogida en el artículo 4.2.1 
+    de la ITC-LAT-07.
+    """)
+    st.write("""
+    La densidad máxima del conductor de Al-Ac, $\\delta_{LA}$, viene dada por:
+    """)
+    st.latex(r"""
+    \delta_{LA} = \delta_L \cdot k
+    """)
+    st.write("""
+    y la intensidad máxima por fase, $I$, para una sección total del conductor $S_{LA}$, por:
+    """)
+    st.latex(r"""
+    I = \delta_{LA} \cdot S_{LA}
+    """)
+    st.write(f"""
+    Los valores correspondientes al conductor {conductor}, para un $\\cos \\varphi$ =  {cos_phi}, son los que a continuación se indican:
+    """)
     # Densidades de corriente
     secciones = [15, 25, 35, 50, 70, 95, 125, 160, 200, 250, 300, 400, 500, 600]
     densidades = [6, 5, 4.55, 4.0, 3.55, 3.2, 2.9, 2.7, 2.5, 2.3, 2.15, 1.95, 1.8, 1.65]  # A/mm2
@@ -983,7 +1318,6 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
                 return densidad
         return None
     densidad_maxima = densidad_corriente(seccion)
-    print(f"\nDensidad máxima de corriente para la sección {seccion} mm²: {densidad_maxima:.4f} A/mm²")
     # Coeficientes reductores
     composiciones = ["30+7", "6+1", "26+7", "54+7", "45+7"]
     coef_reductores = [0.916, 0.937, 0.937, 0.95, 0.97]
@@ -993,20 +1327,29 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
             return coef_reductores[index]
         return None
     coef_reductor = coeficiente_reductor(composicion)
-    print(f"Coeficiente reductor para la composición {composicion}: {coef_reductor:.4f}")
     densidad_max_con_reduccion = densidad_maxima * coef_reductor
-    print(f"Densidad máxima de corriente con coeficiente reductor: {densidad_max_con_reduccion:.4f} A/mm²")
     # Intensidad máxima
     intensidad_maxima_conductor = densidad_max_con_reduccion * seccion  # A
-    print(f"Corriente máxima admisible del conductor: {intensidad_maxima_conductor:.2f} A")
 
+    st.latex(rf"\delta_{{L}} = {densidad_maxima:.4f} \, A/mm^2")
+    st.latex(rf"k = {coef_reductor:.4f}")
+    st.latex(rf"\delta_{{LA}} = {densidad_max_con_reduccion:.4f} \, A/mm^2")
+    st.latex(rf"I = {densidad_max_con_reduccion:.4f} \cdot {seccion} = {intensidad_maxima_conductor:.2f} \, A")
+    
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # POTENCIA MÁXIMA ADMISIBLE POR INTENSIDAD
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n10. POTENCIA MÁXIMA ADMISIBLE POR INTENSIDAD")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     potencia_maxima_admisible = (intensidad_maxima_conductor * tension_nominal * raiz(3)) * cos_phi 
-    print(f"\nPotencia máxima admisible por intensidad: {potencia_maxima_admisible/1000:.2f} MW")
+    st.write("""La potencia que puede transportar la línea está limitada por la intensidad máxima y por la aída de tensión, la cual no deberá exceder del 5%""")
+    st.write("""La máxima potencia a transportar limitada por laintensidad máxima es:""")
+    st.latex(rf"P_{{max}} = \sqrt{{3}} \cdot U_{{nom}} \cdot I_{{max}} \cdot \cos \varphi")
+    st.write(f"""Tendremos para un $\\cos \\varphi$ = {cos_phi}:""")
+    st.latex(rf"P_{{max}} = \sqrt{{3}} \cdot {tension_nominal} \cdot {intensidad_maxima_conductor:.2f} \cdot {cos_phi} = {potencia_maxima_admisible:.2f} kW")
     # Comparar potencia máxima admisible con potencia transportada
     if potencia_maxima_admisible/1000 >= potencia_transportada_MW:
         print("La potencia es mayor que la potencia a transportar.")
@@ -1017,24 +1360,90 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # POTENCIA DE TRANSPORTE EN FUNCIÓN DE CONDICIONES METEOROLÓGICAS
     #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n11. CÁLCULO POTENCIA DE TRANSPORTE EN FUNCIÓN DE CONDICIONES METEOROLÓGICAS")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     # Calor aportado por radiación solar para invierno y verano Qs = coeficiente_absorcion * radiacion * diametro/1000
     st.subheader("\n   11.1. CALOR APORTADO POR RADIACIÓN SOLAR")
     Qs_invierno = coeficiente_absorcion * radiacion_invierno * diametro/1000 # W/m
     Qs_verano = coeficiente_absorcion * radiacion_verano * diametro/1000 # W/m
-    print(f"\nCalor aportado por radiación solar en invierno: {Qs_invierno:.3f} W/m")
-    print(f"Calor aportado por radiación solar en verano: {Qs_verano:.3f} W/m")
+
+
+    st.markdown("""
+    La radiación solar sobre el cable tiene en cuenta tanto la componente directa como la difusa. Se puede expresar como:
+    """)
+
+    st.latex(r"""
+    Q_S = \alpha \cdot S \cdot d_c
+    """)
+
+
+    st.markdown("""
+    Donde:
+    - $\\alpha$ es el coeficiente de absorción del conducto 
+    - $S$ es la radiación global en $\\text{W/m}^2$
+    - $d_c$ es el diámetro del conductor en metros
+    """)
+    st.markdown("""
+    Realizando los cálculos con los valores de la línea para las dos estaciones del año:
+    """)
+    st.latex(rf"Q_{{s_{{inv}}}} = {coeficiente_absorcion} \cdot {radiacion_invierno:.0f} \cdot \frac{{{diametro:.2f}}}{{1000}} = {Qs_invierno:.3f} \, W/m")
+    st.latex(rf"Q_{{s_{{ver}}}} = {coeficiente_absorcion} \cdot {radiacion_verano:.0f} \cdot \frac{{{diametro:.2f}}}{{1000}} = {Qs_verano:.3f} \, W/m")
     # Calor cedido por radiación Qr = pi * diametro/1000 * emisividad_conductor * cte_boltzmann * ((Tc+273.15)^4 - (Ta+273.15)^4)
+
 
     st.subheader("\n   11.2. CALOR CEDIDO POR RADIACIÓN SOLAR")
     cte_boltzmann = 5.6704e-8 # W/m2K4
     Qr_invierno = pi * (diametro/1000) * emisividad_conductor * cte_boltzmann * ((Tc + 273.15)**4 - (temperatura_invierno + 273.15)**4) # W/m
     Qr_verano = pi * (diametro/1000) * emisividad_conductor * cte_boltzmann * ((Tc + 273.15)**4 - (temperatura_verano + 273.15)**4) # W/m
-    print(f"\nCalor cedido por radiación en invierno: {Qr_invierno:.3f} W/m")
-    print(f"Calor cedido por radiación en verano: {Qr_verano:.3f} W/m")
+    st.markdown("""
+    La pérdida de calor por radiación se puede calcular con la siguiente expresión:
+    """)
+    st.latex(r"""
+    Q_r = \pi \cdot d_c \cdot \varepsilon \cdot \sigma_b 
+    \left[
+    \left(T_c + 273.15\right)^4 
+    -
+    \left(T_{amb} + 273.15\right)^4
+    \right]
+    """)
+    st.markdown("""
+    Siendo:
+    - ϵ: emisividad del conductor  
+    - $σ_b$: constante de Stefan–Boltzmann de valor $5.6704 \\cdot 10^{-8} \\, \\text{W/m}^2\\text{K}^4$  
+    - $T_c$: temperatura del conductor en régimen permanente (ºC)  
+    - $T_{amb}$: temperatura ambiente máxima, función de la estación del año (ºC)  
+    """)
+    st.markdown("""
+    Los resultados del cálculo para los valores de la línea se muestran a continuación:
+    """)
+    st.latex(rf"Q_{{r_{{inv}}}} = \pi \cdot \frac{{{diametro:.2f}}}{{1000}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_invierno:.0f} + 273.15\right)^4 \right] = {Qr_invierno:.3f} \, W/m")
+    st.latex(rf"Q_{{r_{{ver}}}} = \pi \cdot \frac{{{diametro:.2f}}}{{1000}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_verano:.0f} + 273.15\right)^4 \right] = {Qr_verano:.3f} \, W/m")
 
     # Calor cedido por convección Qc = pi * conductividad_termica * (Tc - Ta) * Nu
     st.subheader("\n   11.3. CALOR CEDIDO POR CONVECCIÓN")
+    st.markdown("""Al aumentar la temperatura del conductor el aire adyacente se calienta. 
+                Dado que la densidad del aire caliente disminuye con la temperatura, provoca el ascenso de este aire. 
+                Aire frío remplaza este aire caliente, eliminando calor del conductor. Este fenómeno se denomina convección natural.
+                \nSi existe velocidad del viento, el aire caliente será arrastrado reemplazándose por aire más frío que elimina 
+                calor del conductor.
+                \nSi las velocidades de viento son pequeñas, se calculará tanto la convección forzada como convección natural y se elegirá 
+                el valor mayor del coeficiente de transmisión del calor.
+                \nEn cualquier caso la forma de calcular será:
+    """)
+    st.latex(r"""
+    Q_c = \pi \cdot \lambda_f \cdot (T_c - T_{amb}) \cdot Nu
+    """)
+    st.markdown("""
+    Siendo:
+
+    - $\lambda_f$: conductividad térmica del aire en las proximidades del conductor  
+    - $T_c$: temperatura del conductor en régimen permanente (ºC)  
+    - $T_{amb}$: temperatura ambiente máxima, en función de la estación del año (ºC)  
+    - $Nu$: número de Nusselt, calculado en función del tipo de convección (forzada o natural)  
+    """)
+    
     # 1.  Convección natural: Nu = A * (Gr*Pr)^m
     print("\n       11.3.1. CONVECCIÓN NATURAL")
     # Valores de A y m dependiendo de Gr*Pr
@@ -1150,6 +1559,7 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     I_max_verano = raiz((Qr_verano + Qc_verano - Qs_verano) / (resistencia_ca * 1e-3))
     print(f"\nCorriente máxima admisible en invierno según condiciones meteorológicas: {I_max_invierno:.2f} A")
     print(f"Corriente máxima admisible en verano según condiciones meteorológicas: {I_max_verano:.2f} A")
+    
 
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # POTENCIA MÁXIMA DE TRANSPORTE SEGÚN CONDICIONES METEOROLÓGICAS
@@ -1164,7 +1574,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # PÉRDIDAS DE POTENCIA
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n12. PÉRDIDAS DE POTENCIA")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     print(f"Pot transportada mw= {potencia_transportada_MW}")
     perdidas_potencia = ((potencia_transportada_MW * resistencia_ca * longitud) / (tension_nominal**2 * cos_phi**2))*100
     print(f"\nPérdidas de potencia en la línea: {perdidas_potencia:.5f} %")
@@ -1176,7 +1589,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # CORTOCIRCUITO MÁXIMO
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n13. CORTOCIRCUITO MÁXIMO")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     # Constantes según material
     materiales = ["Cobre", "Aluminio-Acero", "Acero"]
     c_conductores = [390, 910, 480]  # J/kgK
@@ -1207,7 +1623,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # EFECTO CORONA
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n14. EFECTO CORONA ")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     beta = 1 # Coeficiente reductor para conductores múltiples
     presion_barometrica = 1/(log(log(76)-altitud_media/18330))*100 
     print(f"Presión barométrica {presion_barometrica} cmHg")
@@ -1247,25 +1666,28 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # CAMPO ELÉCTRICO
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     st.header("\n15. CAMPO ELÉCTRICO ")
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
+        unsafe_allow_html=True
+    )   
     # Matriz coeficientes de potencial
     print("\nMatriz de capacidades (km/uF):")
     df=pd.DataFrame(matriz_capacidades).round(4)
-    latex_matrix = r"P = \begin{bmatrix}"
+    latex_matrix = r"P = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Matriz coeficientes de potencial inversa
     matriz_capacidades_inversa = np.linalg.inv(matriz_capacidades) * 1000
     print("\nMatriz de capacidades inversa(nF/km):")
     df=pd.DataFrame(matriz_capacidades_inversa).round(4)
-    latex_matrix = r"P^{-1} = \begin{bmatrix}"
+    latex_matrix = r"P^{-1} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Vector de potenciales (tensiones nominales/raiz(3) (angulos 0 -120 y 120, tension tierra)) en numeros complejos y kV
     V_phase = tension_nominal / raiz(3)
@@ -1275,21 +1697,21 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
                         0])
     print("\nVector de potenciales (kV):")
     df=pd.DataFrame(V_vector).round(4)
-    latex_matrix = r"U = \begin{bmatrix}"
+    latex_matrix = r"U = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Vector de cargas (matriz_capacidades_inversa @ V_vector)
     Q_vector = matriz_capacidades_inversa @ V_vector /1000
     print("\nVector de cargas (kV·nF/km):")
     df=pd.DataFrame(Q_vector).round(4)
-    latex_matrix = r"q = \begin{bmatrix}"
+    latex_matrix = r"q = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
 
     # Valor complejo de la corriente que circula por cada conductor
@@ -1299,11 +1721,11 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
                         I_phase * cmath.rect(1, math.radians(120))])
     print("\nVector de corrientes (A):")
     df=pd.DataFrame(I_vector).round(4)
-    latex_matrix = r"I = \begin{bmatrix}"
+    latex_matrix = r"I = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-    latex_matrix += r"\end{bmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
 
 
@@ -1429,11 +1851,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             matriz_distancias[i][j] = distancia
     print("\nMatriz de distancias (km):")
     df = pd.DataFrame(matriz_distancias).round(4)
-    latex_matrix = r"D = \begin{bmatrix}"
+    latex_matrix = r"D = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
 
     # Matriz D_prima: distancia entre puntos y sus espejos respecto al suelo
@@ -1448,11 +1870,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             matriz_D_prima[i][j] = distancia
     print("\nMatriz D' (distancias entre puntos y espejos) (km):")
     df = pd.DataFrame(matriz_D_prima).round(4)
-    latex_matrix = r"D' = \begin{bmatrix}"
+    latex_matrix = r"D' = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # kij = raiz(2)*D_prima_ij / penetracion_terreno
     matriz_kij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -1461,11 +1883,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             matriz_kij[i][j] = raiz(2) * matriz_D_prima[i][j] / penetracion_terreno  
     print("\nMatriz k_ij:")
     df = pd.DataFrame(matriz_kij).round(4)
-    latex_matrix = r"k_{ij} = \begin{bmatrix}"
+    latex_matrix = r"k_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # P_ij = pi/8 - k_ij*cos(tetha_ij)/(3*raiz(2)) siendo cos(tetha_ij) = (h_i + h_j )/ D_prima_ij
     matriz_Pij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -1483,11 +1905,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             matriz_Pij[i][j] = P_ij
     print("\nMatriz P_ij:")
     df = pd.DataFrame(matriz_Pij).round(4)
-    latex_matrix = r"P_{ij} = \begin{bmatrix}"
+    latex_matrix = r"P_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Q_ij = 0.5*log neperiano(1.85138/k_ij) + k_ij*cos(tetha_ij)/(3*raiz(2))
     matriz_Qij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -1507,12 +1929,12 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
                 Q_ij = 0
             matriz_Qij[i][j] = Q_ij
     print("\nMatriz Q_ij:")
-    df = pf.DtaFrame(matriz_Qij).round(4)
-    latex_matrix = r"Q_{ij} = \begin{bmatrix}"
+    df = pd.DataFrame(matriz_Qij).round(4)
+    latex_matrix = r"Q_{ij} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Resistencia de cada uno de los conductores (ultimo a tierra con dato de resistencia a tierra directamente)
     resistencias_conductores = [resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_tierra]
@@ -1531,11 +1953,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     ]
     print("\nRadio de los conductores (mm):")
     df=pd.DataFrame(radio_conductores_mm).round(4)
-    latex_matrix = r"r = \begin{bmatrix}"
+    latex_matrix = r"r = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Matriz de impedancias con:
     # Z_ii = R_i + j*mu0*frecuencia*((1/(4*n_i)+log(D_prima_ii/r_i)))+mu0*2*frecuencia*(P_ii + j*Q_ii) 
@@ -1563,11 +1985,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             print(f"{Z:18.4f}", end="  ")
         print()
     df = pd.DataFrame(matriz_impedancias).round(4)
-    latex_matrix = r"Z = \begin{bmatrix}"
+    latex_matrix = r"Z = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     """ Como la linea posee cable de tierra, es necesario realizar un análisis matricial para eliminarlos y obtener una matriz 3*3 que representa las impedancias por fase
     Z=[Zf, Zft; Ztf, Zt]
@@ -1582,21 +2004,21 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     Zfas = Zf - Zft @ Zt_inv @ Ztf
     print("\nMatriz de impedancias por fase (Ω/km):")
     df = pd.DataFrame(Zfas).round(4)
-    latex_matrix = r"Z = \begin{bmatrix}"
+    latex_matrix = r"Z = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Finalmente, multiplicar por la longitud de la línea para obtener las impedancias totales
     Zfas_total = Zfas * longitud
     print("\nMatriz de impedancias por fase total para la longitud dada (Ω):")
     df = pd.DataFrame(Zfas_total).round(4)
-    latex_matrix = r"Z = \begin{bmatrix}"
+    latex_matrix = r"Z = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.3f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Impedancias de secuencia
     print("\n3. IMPEDANCIAS DE SECUENCIA")
@@ -1610,11 +2032,11 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     Z_seq = A_inv @ Zfas @ A
     print("\nMatriz de impedancias de secuencia (Ω):")
     df = pd.DataFrame(Z_seq).round(4)
-    latex_matrix = r"Z_{012} = \begin{bmatrix}"
+    latex_matrix = r"Z_{012} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.3f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{bmatrix}"
+        latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Matriz anterior de impedancias de secuencia pero con argumento y angulo
     print("\nMatriz de impedancias de secuencia con magnitud y ángulo (Ω):")
