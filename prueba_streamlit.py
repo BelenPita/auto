@@ -1114,20 +1114,21 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Cfas_inv = np.linalg.inv(Cfas)
     Bfas = 1j * 2 * pi * frecuencia * Cfas_inv
     df=pd.DataFrame(Bfas).round(4)
-    latex_matrix = r"B = \begin{pmatrix}"
+    latex_matrix = r"B = j\begin{pmatrix}"
     for row in df.values:
-        latex_matrix += " & ".join(f"{v:.4f}" for v in row)
+        latex_matrix += " & ".join(f"{v.imag:.4f}" for v in row)
         latex_matrix += r" \\ "
     latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}/\text{km}"
     st.latex(latex_matrix)
+
     # Matriz de susceptancias total para la longitud dada
     Bfas_total = Bfas * longitud
     st.markdown(f"""Con la longitud de la línea de {longitud} km, se obtiene:""")
     df=pd.DataFrame(Bfas_total).round(4)
-    latex_matrix = r"B = \begin{pmatrix}"
+    latex_matrix = r"B = j\begin{pmatrix}"
     for row in df.values:
-        latex_matrix += " & ".join(f"{v:.4f}" for v in row)
+        latex_matrix += " & ".join(f"{v.imag:.4f}" for v in row)
         latex_matrix += r" \\ "
     latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}"
@@ -1164,9 +1165,9 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     """)
     B_seq = A_inv @ Bfas @ A
     df=pd.DataFrame(B_seq).round(4)
-    latex_matrix = r"B_{012} = \begin{pmatrix}"
+    latex_matrix = r"B_{012} = j\begin{pmatrix}"
     for row in df.values:
-        latex_matrix += " & ".join(f"{v:.4f}" for v in row)
+        latex_matrix += " & ".join(f"{v.imag:.4f}" for v in row)
         latex_matrix += r" \\ "
     latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\;\mu\text{S}"
@@ -1369,16 +1370,12 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Qs_invierno = coeficiente_absorcion * radiacion_invierno * diametro/1000 # W/m
     Qs_verano = coeficiente_absorcion * radiacion_verano * diametro/1000 # W/m
 
-
     st.markdown("""
     La radiación solar sobre el cable tiene en cuenta tanto la componente directa como la difusa. Se puede expresar como:
     """)
-
     st.latex(r"""
     Q_S = \alpha \cdot S \cdot d_c
     """)
-
-
     st.markdown("""
     Donde:
     - $\\alpha$ es el coeficiente de absorción del conducto 
@@ -1388,10 +1385,9 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     st.markdown("""
     Realizando los cálculos con los valores de la línea para las dos estaciones del año:
     """)
-    st.latex(rf"Q_{{s_{{inv}}}} = {coeficiente_absorcion} \cdot {radiacion_invierno:.0f} \cdot \frac{{{diametro:.2f}}}{{1000}} = {Qs_invierno:.3f} \, W/m")
-    st.latex(rf"Q_{{s_{{ver}}}} = {coeficiente_absorcion} \cdot {radiacion_verano:.0f} \cdot \frac{{{diametro:.2f}}}{{1000}} = {Qs_verano:.3f} \, W/m")
+    st.latex(rf"Q_{{s_{{inv}}}} = {coeficiente_absorcion} \cdot {radiacion_invierno:.0f} \cdot {{{diametro:.2f}}} \cdot 10^{{-3}} = {Qs_invierno:.3f} \, W/m")
+    st.latex(rf"Q_{{s_{{ver}}}} = {coeficiente_absorcion} \cdot {radiacion_verano:.0f} \cdot {{{diametro:.2f}}} \cdot 10^{{-3}} = {Qs_verano:.3f} \, W/m")
     # Calor cedido por radiación Qr = pi * diametro/1000 * emisividad_conductor * cte_boltzmann * ((Tc+273.15)^4 - (Ta+273.15)^4)
-
 
     st.subheader("\n   11.2. CALOR CEDIDO POR RADIACIÓN SOLAR")
     cte_boltzmann = 5.6704e-8 # W/m2K4
@@ -1418,8 +1414,8 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     st.markdown("""
     Los resultados del cálculo para los valores de la línea se muestran a continuación:
     """)
-    st.latex(rf"Q_{{r_{{inv}}}} = \pi \cdot \frac{{{diametro:.2f}}}{{1000}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_invierno:.0f} + 273.15\right)^4 \right] = {Qr_invierno:.3f} \, W/m")
-    st.latex(rf"Q_{{r_{{ver}}}} = \pi \cdot \frac{{{diametro:.2f}}}{{1000}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_verano:.0f} + 273.15\right)^4 \right] = {Qr_verano:.3f} \, W/m")
+    st.latex(rf"Q_{{r_{{inv}}}} = \pi \cdot {{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_invierno:.0f} + 273.15\right)^4 \right] = {Qr_invierno:.3f} \, W/m")
+    st.latex(rf"Q_{{r_{{ver}}}} = \pi \cdot {{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {emisividad_conductor} \cdot {cte_boltzmann:.4e} \cdot \left[ \left({Tc:.0f} + 273.15\right)^4 - \left({temperatura_verano:.0f} + 273.15\right)^4 \right] = {Qr_verano:.3f} \, W/m")
 
     # Calor cedido por convección Qc = pi * conductividad_termica * (Tc - Ta) * Nu
     st.subheader("\n   11.3. CALOR CEDIDO POR CONVECCIÓN")
@@ -1515,13 +1511,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     # Re = (diametro/1000) * velocidad_viento / viscosidad_cinematica
     # Rugosidad: Rf = diametro_alambre_ext / (2*(diametro-diametro_alambe_ext))
     Rf = diametro_alambre_ext / (2 * (diametro - diametro_alambre_ext))
-    print(f"\nRugosidad Rf: {Rf:.3f}")
     def Re(viscosidad_cinematica):
         return (diametro/1000) * velocidad_viento / viscosidad_cinematica
     Re_invierno = Re(viscosidad_cinematica_invierno)
     Re_verano = Re(viscosidad_cinematica_verano)
-    print(f"\nNúmero de Reynolds en invierno: {Re_invierno:.2f}")
-    print(f"Número de Reynolds en verano: {Re_verano:.2f}")
     #B1 y n según Re
     def coeficientes_conveccion_forzada(Re, Rf):
         if 100 < Re < 2.65e3:
@@ -1540,26 +1533,97 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     B1_verano, n_verano = coeficientes_conveccion_forzada(Re_verano, Rf)
     if B1_verano is not None:
         Nu_verano_forzada = B1_verano * (Re_verano ** n_verano)
-    print(f"\nNúmero de Nusselt por convección forzada en invierno: {Nu_invierno_forzada:.4f}")
-    print(f"Número de Nusselt por convección forzada en verano: {Nu_verano_forzada:.4f}")
+    # Nu corregido
     Nu_45_invierno = Nu_invierno_forzada * (0.42 + 0.58*math.sin(45*pi/180)**0.9)
     Nu_45_verano = Nu_verano_forzada * (0.42 + 0.58*math.sin(45*pi/180)**0.9)
-    print(f"\nNúmero de Nusselt corregido para ángulo de 45° en invierno: {Nu_45_invierno:.4f}")
-    print(f"Número de Nusselt corregido para ángulo de 45° en verano: {Nu_45_verano:.4f}")
     # Qc = pi* conductividad_termica * (Tc-Ta) * Nu con Nu=max(Nu_natural, Nu_45_forzada)
     Qc_invierno = pi * conductividad_termica_aire_invierno * (Tc - temperatura_invierno) * max (Nu_invierno, Nu_45_invierno)
     Qc_verano = pi * conductividad_termica_aire_verano * (Tc - temperatura_verano) * max (Nu_verano, Nu_45_verano)
-    print(f"\nCalor cedido por convección en invierno: {Qc_invierno:.3f} W/m")
-    print(f"Calor cedido por convección en verano: {Qc_verano:.3f} W/m")
+
+    st.markdown("""Cuando la velocidad de viento es mayor que cero, el número de Nusselt es función de Reynolds a través de la siguiente ecuación:""")
+    st.latex(r"Nu = B_1 \cdot Re^n")
+    st.markdown("""El número de Reynolds para una corriente de aire se puede calcular como:""")
+    st.latex(r"Re = \frac{d \cdot v}{\nu}")
+    st.markdown("""
+        Siendo:
+        - $d$: Diámetro del conductor en metros
+        - $v$: Velocidad del viento en m/s
+        - $\\nu$: Viscosidad cinemática del aire en m²/s""")
+    st.markdown("""Los valores de las constantes $B_1$ y $n$ dependen del número de Reynolds y de la rugosidad del conductor, siendo esta última:""")
+    st.latex(r"R_f = \frac{d}{2 \cdot (D - d)}")
+    st.markdown("""
+        Siendo:
+        - $d$: Diámetro del alambre exterior del conductor
+        - $D$: Diámetro del conductor""")
+    st.markdown("""Los valores de $B_1$ y $n$ se muestran a continuación:""")
+    st.latex(r"""
+        \begin{array}{|c|c|c|c|c|}
+        \hline
+        \textbf{Superficie} &
+        \textbf{Re} &
+        \textbf{Re} &
+        \mathbf{B_1} &
+        \mathbf{n} \\
+        \hline
+        & \textbf{desde} & \textbf{hasta} & & \\
+        \hline
+        \text{Todas las superficies} &
+        10^{2} &
+        2.65 \cdot 10^{3} &
+        0.641 &
+        0.471 \\
+        \hline
+        R_f \le 0.05 &
+        > 2.65 \cdot 10^{3} &
+        5 \cdot 10^{4} &
+        0.178 &
+        0.633 \\
+        \hline
+        R_f > 0.05 &
+        > 2.65 \cdot 10^{3} &
+        5 \cdot 10^{4} &
+        0.048 &
+        0.800 \\
+        \hline
+        \end{array}
+        """)
+    st.markdown("""Para los datos de este conductor obtenemos la siguiente rugosidad:""")
+    st.latex(rf"R_f = \frac{{{diametro_alambre_ext:.2f}}}{{2 \cdot ({diametro:.2f} - {diametro_alambre_ext:.2f})}} = {Rf:.3f}")
+    st.markdown(f"""El número de Reynolds para la velocidad de viento estimada de {velocidad_viento} m/s es:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Re_{{inv}} = \frac{{{{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_invierno:.4e}}} = {Re_invierno:.2f}")
+    st.markdown("""En verano:""")
+    st.latex(rf"Re_{{ver}} = \frac{{{{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_verano:.4e}}} = {Re_verano:.2f}")
+    st.markdown("""Por tanto, el número de Nusselt en convección forzada será:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Nu_{{90_{{inv}}}} = B_1 \cdot Re^n = {B1_invierno:.4f} \cdot {Re_invierno:.2f}^{{{n_invierno:.3f}}} = {Nu_invierno_forzada:.4f}")
+    st.markdown("""En verano:""")
+    st.latex(rf"Nu_{{90_{{ver}}}} = B_1 \cdot Re^n =  {B1_verano:.4f} \cdot {Re_verano:.2f}^{{{n_verano:.3f}}} = {Nu_verano_forzada:.4f}")
+    st.markdown("""El cálculo anterior se basa en que el viento incide perpendicularmente a la línea. Para corregir el número de Nusselt a un ángulo de incidencia de 45° se aplica la siguiente corrección:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Nu_{{45_{{inv}}}} = Nu_{{90}} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_invierno_forzada:.4f} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_45_invierno:.4f}")
+    st.markdown("""En verano:""")
+    st.latex(rf"Nu_{{45_{{ver}}}} = Nu_{{90}} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_verano_forzada:.4f} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_45_verano:.4f}")
+    st.markdown("""Finalmente, el calor cedido por convección se calcula con la siguiente expresión, eligiendo el número de Nusselt mayor entre el calculado para convección natural y el corregido para convección forzada:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Q_{{c_{{inv}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_invierno:.4f} \cdot ({Tc} - {temperatura_invierno}) \cdot {max(Nu_invierno, Nu_45_invierno):.4f} = {Qc_invierno:.3f} \, W/m")
+    st.markdown("""En verano:""")
+    st.latex(rf"Q_{{c_{{ver}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_verano:.4f} \cdot ({Tc} - {temperatura_verano}) \cdot {max(Nu_verano, Nu_45_verano):.4f} = {Qc_verano:.3f} \, W/m")
 
     # Resultados corriente máxima: I = raiz((Qr+Qc-Qs)/resistencia_ca/1000)
     st.subheader("\n   11.4. RESULTADOS CORRIENTE MÁXIMA")
-    print(f"\nResistencia del conductor a la temperatura de cálculo: {resistencia_ca:.6f} Ohmios/km")
     I_max_invierno = raiz((Qr_invierno + Qc_invierno - Qs_invierno)/ (resistencia_ca * 1e-3))
     I_max_verano = raiz((Qr_verano + Qc_verano - Qs_verano) / (resistencia_ca * 1e-3))
-    print(f"\nCorriente máxima admisible en invierno según condiciones meteorológicas: {I_max_invierno:.2f} A")
-    print(f"Corriente máxima admisible en verano según condiciones meteorológicas: {I_max_verano:.2f} A")
-    
+  
+    st.markdown("""El calor generado por efecto Joule es:""")
+    st.latex(rf"Q_J = I^2 \cdot R_{{ca}}")
+    st.markdown("""Conocida la resistencia del conductor a la temperatura de trabajo en corriente alterna,
+                 la incógnita será la corriente que puede circular para que en régimen permanente el calor generado sea igual al calor generado""")
+    st.latex(rf"Q_J + Q_S = Q_c + Q_r")
+    st.markdown("""Los resultados en invierno son:""")
+    st.latex(rf"I_{{max_{{inv}}}} = \sqrt{{\frac{{Q_{{r_{{inv}}}} + Q_{{c_{{inv}}}} - Q_{{s_{{inv}}}}}}{{R_{{ca}} \cdot 10^{{-3}}}}}} = \sqrt{{\frac{{{Qr_invierno:.3f} + {Qc_invierno:.3f} - {Qs_invierno:.3f}}}{{{resistencia_ca:.6f} \cdot 10^{{-3}}}}}} = {I_max_invierno:.2f} \, A")
+    st.markdown("""Los resultados en verano son:""")
+    st.latex(rf"I_{{max_{{ver}}}} = \sqrt{{\frac{{Q_{{r_{{ver}}}} + Q_{{c_{{ver}}}} - Q_{{s_{{ver}}}}}}{{R_{{ca}} \cdot 10^{{-3}}}}}} = \sqrt{{\frac{{{Qr_verano:.3f} + {Qc_verano:.3f} - {Qs_verano:.3f}}}{{{resistencia_ca:.6f} \cdot 10^{{-3}}}}}} = {I_max_verano:.2f} \, A")
 
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # POTENCIA MÁXIMA DE TRANSPORTE SEGÚN CONDICIONES METEOROLÓGICAS
