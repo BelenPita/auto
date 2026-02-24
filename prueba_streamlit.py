@@ -577,6 +577,18 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
         unsafe_allow_html=True
     )
+    st.markdown(f"""La resistencia eléctrica del conductor {conductor}, por unidad de longitud, en corriente continua y a la temperatura
+                máxima del conductor ({Tc:.0f}ºC), vendrá dada por la siguiente expresión:""")
+    st.latex(fr"""R_{{{Tc:.0f}}} = R_{{20cc}} \cdot (1 + \alpha \cdot ({{{Tc:.0f}}} - 20))""")
+    st.markdown(f"""
+                Donde:
+                - $R_{{{Tc:.0f}}}$ es la resistencia del conductor en corriente continua a {Tc:.0f} ºC
+                - $R_{{20cc}}$ es la resistencia del conductor en corriente continua a 20ºC
+                - $\\alpha$ es el coeficiente de aumento de la resistividad eléctrica con la temperatura
+                """)
+
+
+                
     resistencia_85C = resistencia_a_temp(resistencia, Tc)
     print(f"Resistencia a {Tc:.2f}ºC: {resistencia_85C:.6f} Ω/km")
     reactancia_pelicular_85C = 10**-7 * 8 * pi * frecuencia * (1 / (resistencia_a_temp(resistencia, Tc) / 1000))
@@ -1506,6 +1518,59 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     print(f"\nNúmero de Nusselt en invierno: {Nu_invierno:.4f}")
     print(f"Número de Nusselt en verano: {Nu_verano:.4f}")
 
+
+
+
+
+    st.markdown("""El número de Nusselt para enfriamiento por convección natural depende del producto de los números de Grasshof
+                y Prandtl:""")
+    st.latex(r"Nu = A \cdot (Gr \cdot Pr)^m")
+    st.markdown("""Los valores de las constantes $A$ y $m$ dependen del valor del producto $Gr \\cdot Pr$ según la siguiente tabla:""")
+    st.latex(r"""
+             \begin{array}{|c|c|c|c|}
+             \hline
+             &
+             \mathbf{A} &
+             \mathbf{m} \\
+             \hline
+             0.1 < Gr \cdot Pr < 100 &
+             1.02 &
+             0.148 \\
+             \hline
+             100 < Gr \cdot Pr < 10^4 &
+             0.85 &
+             0.188 \\
+             \hline
+             10^4 < Gr \cdot Pr < 10^7&
+             0.48 &
+             0.25 \\
+             \hline
+             10^7 < Gr \cdot Pr < 10^{12}&
+             0.125 &
+             0.333 \\
+             \hline
+             \end{array}
+             """)
+    st.markdown("""El número de Grashof se puede calcular como:""")
+    st.latex(r"""Gr = \frac{d_c^3 \cdot (T_c - T_{amb}) \cdot g}{T_{av} \cdot \nu_f^2}""")
+    st.markdown("""
+                Donde:
+                - $d_c$: Diámetro exterior del conductor en metros
+                - $T_c$: Temperatura del conductor en régimen permanente
+                - $T_{amb}$: Temperatura ambiente en función de la estación del año
+                - $g$: Aceleración de la gravedad, con un valor de 9.81 m/s²
+                - $T_{av}$: Temperatura media entre el conductor y el ambiente, calculada como $(T_c + T_{amb})/2$
+                - $\\nu_f$: Viscosidad cinemática del aire en m²/s
+                """)
+    st.markdown("""El número de Grashof en invierno es:""")
+    st.latex(rf"Gr_{{inv}} = \frac{{\left({{{diametro}}} \cdot 10^{-3}\right)^3 \cdot ({Tc} - {temperatura_invierno}) \cdot 9.81}}{{\left(\frac{{{Tc} + {temperatura_invierno}}}{{2}} + 273.15\right) \cdot ({viscosidad_cinematica_invierno:.4e})^2}} = {Gr_invierno:.2f}")
+    st.markdown("""El número de Grashof en verano es:""")
+    st.latex(rf"Gr_{{ver}} = \frac{{\left({{{diametro}}} \cdot 10^{-3}\right)^3 \cdot ({Tc} - {temperatura_verano}) \cdot 9.81}}{{\left(\frac{{{Tc} + {temperatura_verano}}}{{2}} + 273.15\right) \cdot ({viscosidad_cinematica_verano:.4e})^2}} = {Gr_verano:.2f}")
+    st.markdown("""El número de Prandtl se puede calcular como:""")
+    st.latex(r"""Pr = \frac{C_p \cdot \mu}{\lambda}""")
+
+
+
     # 2. Convección forzada: Nu = B1 * Re^n
     print("\n       11.3.2. CONVECCIÓN FORZADA")
     # Re = (diametro/1000) * velocidad_viento / viscosidad_cinematica
@@ -1691,7 +1756,6 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         "<hr style='margin-top: 4px; margin-bottom: 8px;'>",
         unsafe_allow_html=True
     )   
-    beta = 1 # Coeficiente reductor para conductores múltiples
     presion_barometrica = 1/(log(log(76)-altitud_media/18330))*100 
     print(f"Presión barométrica {presion_barometrica} cmHg")
     # Factor corrección densidad aire: delta
@@ -1791,7 +1855,6 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         latex_matrix += r" \\ "
     latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
-
 
     resistencia_ca_final = resistencia * (1+7.5*frecuencia**2*(diametro/20)**4*1e-7)
     print(f"\nResistencia:{resistencia_ca_final:.6f}")
