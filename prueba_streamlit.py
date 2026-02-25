@@ -717,6 +717,17 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\text{m}"
     st.latex(latex_matrix)
+
+    # Generar código LaTeX compatible con Overleaf
+    latex_matrix = r"\[D = \begin{pmatrix}" + "\n"
+    for row in df.values:
+        latex_matrix += " & ".join(f"{v:.4f}" for v in row) + r" \\ " + "\n"
+    latex_matrix += r"\end{pmatrix} \text{ m}\]"
+
+    # Mostrar el código LaTeX en Streamlit
+    st.markdown("### Código LaTeX para Overleaf")
+    st.code(latex_matrix, language='latex')
+        
     # Matriz D_prima: distancia entre puntos y sus espejos respecto al suelo
     matriz_D_prima = [[0]*n_puntos for _ in range(n_puntos)]
     for i in range(n_puntos):
@@ -851,6 +862,24 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     latex_matrix += r"\end{pmatrix}"
     latex_matrix += r"\text{Ω/km}"
     st.latex(latex_matrix)
+
+
+
+        # Generar código LaTeX compatible con Overleaf
+    latex_matrix = r"\[Z = \begin{pmatrix}" + "\n"
+    for row in df.values:
+        latex_matrix += " & ".join(f"{v:.4f}" for v in row) + r" \\ " + "\n"
+    latex_matrix += r"\end{pmatrix} \text{ Ω/km}\]"
+
+    # Mostrar el código LaTeX en Streamlit
+    st.markdown("### Código LaTeX para Overleaf")
+    st.code(latex_matrix, language='latex')
+
+
+
+
+
+
     # Como la linea posee cable de tierra, es necesario realizar un análisis matricial para eliminarlos y obtener una matriz 3*3 que representa las impedancias por fase
     # Z=[Zf, Zft; Ztf, Zt]
     # Zfas = Zf - Zft * inv(Zt) * Ztf
@@ -1196,7 +1225,7 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         rf"B_1 = {B1.imag:.4f}j\, \, \mu S/km"
     )
     B0_total = B_seq[2, 2] * longitud
-    print(f"\nCon la longistu de la línea de {longitud} km: ")
+    print(f"\nCon la longitud de la línea de {longitud} km: ")
     B1_total = B_seq[1, 1] * longitud
     st.latex(
         rf"B_{0} = {B0_total.imag:.4f}j\,\mu S"
@@ -1982,7 +2011,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
 
     # Matriz D_prima: distancia entre puntos y sus espejos respecto al suelo
@@ -2001,7 +2030,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # kij = raiz(2)*D_prima_ij / penetracion_terreno
     matriz_kij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -2014,7 +2043,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # P_ij = pi/8 - k_ij*cos(tetha_ij)/(3*raiz(2)) siendo cos(tetha_ij) = (h_i + h_j )/ D_prima_ij
     matriz_Pij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -2036,7 +2065,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Q_ij = 0.5*log neperiano(1.85138/k_ij) + k_ij*cos(tetha_ij)/(3*raiz(2))
     matriz_Qij = [[0]*n_puntos for _ in range(n_puntos)]
@@ -2061,13 +2090,21 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Resistencia de cada uno de los conductores (ultimo a tierra con dato de resistencia a tierra directamente)
     resistencias_conductores = [resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_ca, resistencia_tierra]
     print("\nResistencias de los conductores (Ω/km):")
     for i, R in enumerate(resistencias_conductores):
         print(f" {R:.6f} Ω/km")
+    df=pd.DataFrame(resistencias_conductores).round(4)
+    latex_matrix = r"R_i = \begin{pmatrix}"
+    for row in df.values:
+        latex_matrix += " & ".join(f"{v:.4f}" for v in row)
+        latex_matrix += r" \\ "
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text Ω \text / \text km"
+    st.latex(latex_matrix)
     # Radio de cada conductor en mm
     radio_conductores_mm = [
         diametro / 2,
@@ -2080,11 +2117,12 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     ]
     print("\nRadio de los conductores (mm):")
     df=pd.DataFrame(radio_conductores_mm).round(4)
-    latex_matrix = r"r = \begin{pmatrix}"
+    latex_matrix = r"r_{eq} = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\text {mm}"
     st.latex(latex_matrix)
     # Matriz de impedancias con:
     # Z_ii = R_i + j*mu0*frecuencia*((1/(4*n_i)+log(D_prima_ii/r_i)))+mu0*2*frecuencia*(P_ii + j*Q_ii) 
@@ -2106,17 +2144,13 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
                 Z_ij = (1j * mu0 * frecuencia * (log(D_prima_ij / D_ij)) + mu0 * 2 * frecuencia * (P_ij + 1j * Q_ij))*1000
                 matriz_impedancias[i][j] = Z_ij
     print("\nMatriz de impedancias (Ω/km):")
-    for i, fila in enumerate(matriz_impedancias):
-        print(f"", end="")
-        for Z in fila:
-            print(f"{Z:18.4f}", end="  ")
-        print()
+    
     df = pd.DataFrame(matriz_impedancias).round(4)
-    latex_matrix = r"Z = \begin{pmatrix}"
+    latex_matrix = r" Z = \begin{pmatrix}"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     """ Como la linea posee cable de tierra, es necesario realizar un análisis matricial para eliminarlos y obtener una matriz 3*3 que representa las impedancias por fase
     Z=[Zf, Zft; Ztf, Zt]
@@ -2135,8 +2169,23 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
+
+
+            # Generar código LaTeX compatible con Overleaf
+    latex_matrix = r"\[Z = \begin{pmatrix}" + "\n"
+    for row in df.values:
+        latex_matrix += " & ".join(f"{v:.4f}" for v in row) + r" \\ " + "\n"
+    latex_matrix += r"\end{pmatrix} \text{ Ω/km}\]"
+
+    # Mostrar el código LaTeX en Streamlit
+    st.markdown("### Código LaTeX para Overleaf")
+    st.code(latex_matrix, language='latex')
+
+
+
+    
     # Finalmente, multiplicar por la longitud de la línea para obtener las impedancias totales
     Zfas_total = Zfas * longitud
     print("\nMatriz de impedancias por fase total para la longitud dada (Ω):")
@@ -2145,7 +2194,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.3f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Impedancias de secuencia
     print("\n3. IMPEDANCIAS DE SECUENCIA")
@@ -2163,7 +2212,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.3f}" for v in row)
         latex_matrix += r" \\ "
-        latex_matrix += r"\end{pmatrix}"
+    latex_matrix += r"\end{pmatrix}"
     st.latex(latex_matrix)
     # Matriz anterior de impedancias de secuencia pero con argumento y angulo
     print("\nMatriz de impedancias de secuencia con magnitud y ángulo (Ω):")
@@ -2186,6 +2235,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
         for Z in fila:
             print(f"{Z:18.3f}", end="  ")
         print()
+
     # Matriz anterior de impedancias de secuencia pero con argumento y angulo
     print("\nMatriz de impedancias de secuencia total con magnitud y ángulo para la longitud dada (Ω):")
     for i, fila in enumerate(Z_seq_total):
@@ -2195,6 +2245,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
             angulo = math.degrees(math.atan2(Z.imag, Z.real))
             print(f"{magnitud:12.3f} ∠ {angulo:8.2f}°", end="  ")
         print()
+    
     Z0_total = Z_seq_total[2, 2]
     print(f"\nImpedancia homopolar de la línea total (Z0): {Z0_total:.3f} Ω")
     Z1_total = Z_seq_total[1, 1]
