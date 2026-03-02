@@ -1547,7 +1547,8 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     print(f"\nNúmero de Nusselt en invierno: {Nu_invierno:.4f}")
     print(f"Número de Nusselt en verano: {Nu_verano:.4f}")
 
-
+    temp_media_invierno = (Tc+ temperatura_invierno)/2
+    temp_media_verano = (Tc + temperatura_verano)/2
 
 
 
@@ -1596,10 +1597,33 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     st.markdown("""El número de Grashof en verano es:""")
     st.latex(rf"Gr_{{ver}} = \frac{{\left({{{diametro}}} \cdot 10^{-3}\right)^3 \cdot ({Tc} - {temperatura_verano}) \cdot 9.81}}{{\left(\frac{{{Tc} + {temperatura_verano}}}{{2}} + 273.15\right) \cdot ({viscosidad_cinematica_verano:.4e})^2}} = {Gr_verano:.2f}")
     st.markdown("""El número de Prandtl se puede calcular como:""")
-    st.latex(r"""Pr = \frac{C_p \cdot \mu}{\lambda}""")
-
-
-
+    st.latex(r"""Pr = \frac{C_f \cdot \mu_f}{\lambda_f}""")
+    st.markdown("""Para los valores siguientes""")
+    st.markdown("""Calor específico del aire""")
+    st.latex(r"""c_f = 1005 \frac{J}{kg \cdot K}""")
+    st.markdown("""La viscosidad dinámica en función de la temperatura se calcula mediante la siguiente fórmula:""")
+    st.latex(r"\mu_f = (17.239 + 4.635 \cdot 10^{-2} \cdot T_f - 2.03 \cdot 10^{-5} \cdot T_f^2) \cdot 10^{-6}")
+    st.markdown("""Obteniendo en invierno:""")
+    st.latex(rf"\mu_{{f_{{inv}}}} = (17.239 + 4.635 \cdot 10^{{-2}} \cdot {{{temp_media_invierno:.2g}}} - 2.03 \cdot 10^{{-5}} \cdot T_f^2) \cdot 10^{{-6}} = {{{viscosidad_dinamica_invierno}}}")
+    st.markdown("""Y en verano:""")
+    st.latex(rf"\mu_{{f_{{inv}}}} = (17.239 + 4.635 \cdot 10^{{-2}} \cdot {{{temp_media_verano:.2g}}} - 2.03 \cdot 10^{{-5}} \cdot T_f^2) \cdot 10^{{-6}} = {{{viscosidad_dinamica_verano}}}")
+    st.markdown("""En cuanto a la conductividad térmica del aire, esta se calcula mediante la siguiente expresión:""")
+    st.latex(r"\lambda_f = 2.368 \cdot 10^{-2} + 7.23 \cdot 10^{-5} \cdot T_f - 2.763 \cdot 10^{-8} \cdot T_f^2")
+    st.markdown("""Siendo este en invierno:""")
+    st.latex(rf"\lambda_{{f_{{inv}}}} = 2.368 \cdot 10^{{-2}} + 7.23 \cdot 10^{{-5}} \cdot {{{temp_media_invierno:.2g}}} - 2.763 \cdot 10^{{-8}} \cdot {{{temp_media_invierno:.2g}}}^2 = {{{conductividad_termica_aire_invierno:.4f}}}")
+    st.markdown("""Y en verano:""")
+    st.latex(rf"\lambda_{{f_{{inv}}}} = 2.368 \cdot 10^{{-2}} + 7.23 \cdot 10^{{-5}} \cdot {{{temp_media_verano:.2g}}} - 2.763 \cdot 10^{{-8}} \cdot {{{temp_media_verano:.2g}}}^2 = {{{conductividad_termica_aire_verano:.4f}}}")
+    st.markdown("""Por tanto, el número de Prandtl será:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Pr_{{inv}} = \frac{{C_f \cdot \mu_f}}{{\lambda_f}} = \frac {{{{{1005}}} \cdot {{{viscosidad_dinamica_invierno:.4e}}}}}{{{conductividad_termica_aire_invierno:.4f}}} = {{{Pr_invierno:.4f}}}")
+    st.markdown("""En verano:""")
+    st.latex(rf"Pr_{{ver}} = \frac{{C_f \cdot \mu_f}}{{\lambda_f}} = \frac {{{{{1005}}} \cdot {{{viscosidad_dinamica_verano:.4e}}}}}{{{conductividad_termica_aire_verano:.4f}}} = {{{Pr_verano:.4f}}}")
+    st.markdown("""El número de Nusselt para convección natural será:""")
+    st.markdown("""En invierno:""")
+    st.latex(rf"Nu_{{nat_{{inv}}}} = A \cdot (Gr \cdot Pr)^m = {{{A_invierno}}} \cdot ({{{Gr_invierno:.2f}}} \cdot {{{Pr_invierno:.4f}}})^{{{m_invierno}}} = {{{Nu_invierno:.3f}}}")
+    st.markdown("""En verano:""")
+    st.latex(rf"Nu_{{nat_{{ver}}}} = A \cdot (Gr \cdot Pr)^m = {{{A_verano}}} \cdot ({{{Gr_verano:.2f}}} \cdot {{{Pr_verano:.4f}}})^{{{m_verano}}} = {{{Nu_verano:.3f}}}")
+  
     # 2. Convección forzada: Nu = B1 * Re^n
     print("\n       11.3.2. CONVECCIÓN FORZADA")
     # Re = (diametro/1000) * velocidad_viento / viscosidad_cinematica
@@ -1682,12 +1706,12 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
         \end{array}
         """)
     st.markdown("""Para los datos de este conductor obtenemos la siguiente rugosidad:""")
-    st.latex(rf"R_f = \frac{{{diametro_alambre_ext:.2f}}}{{2 \cdot ({diametro:.2f} - {diametro_alambre_ext:.2f})}} = {Rf:.3f}")
+    st.latex(rf"R_f = \frac{{{diametro_alambre_ext:.2g}}}{{2 \cdot ({diametro:.2g} - {diametro_alambre_ext:.2g})}} = {Rf:.3f}")
     st.markdown(f"""El número de Reynolds para la velocidad de viento estimada de {velocidad_viento} m/s es:""")
     st.markdown("""En invierno:""")
-    st.latex(rf"Re_{{inv}} = \frac{{{{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_invierno:.4e}}} = {Re_invierno:.2f}")
+    st.latex(rf"Re_{{inv}} = \frac{{{{{diametro:.2g}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_invierno:.4e}}} = {Re_invierno:.2f}")
     st.markdown("""En verano:""")
-    st.latex(rf"Re_{{ver}} = \frac{{{{{diametro:.2f}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_verano:.4e}}} = {Re_verano:.2f}")
+    st.latex(rf"Re_{{ver}} = \frac{{{{{diametro:.2g}}} \cdot 10^{{-3}} \cdot {velocidad_viento} }}{{{viscosidad_cinematica_verano:.4e}}} = {Re_verano:.2f}")
     st.markdown("""Por tanto, el número de Nusselt en convección forzada será:""")
     st.markdown("""En invierno:""")
     st.latex(rf"Nu_{{90_{{inv}}}} = B_1 \cdot Re^n = {B1_invierno:.4f} \cdot {Re_invierno:.2f}^{{{n_invierno:.3f}}} = {Nu_invierno_forzada:.4f}")
@@ -1700,9 +1724,10 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     st.latex(rf"Nu_{{45_{{ver}}}} = Nu_{{90}} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_verano_forzada:.4f} \cdot (0.42 + 0.58 \cdot \sin(45^\circ)^{{0.9}}) = {Nu_45_verano:.4f}")
     st.markdown("""Finalmente, el calor cedido por convección se calcula con la siguiente expresión, eligiendo el número de Nusselt mayor entre el calculado para convección natural y el corregido para convección forzada:""")
     st.markdown("""En invierno:""")
-    st.latex(rf"Q_{{c_{{inv}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_invierno:.4f} \cdot ({Tc} - {temperatura_invierno}) \cdot {max(Nu_invierno, Nu_45_invierno):.4f} = {Qc_invierno:.3f} \, W/m")
+    st.latex(rf"Q_{{c_{{inv}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_invierno:.4f} \cdot ({Tc} - {temperatura_invierno}) \cdot {max(Nu_invierno, Nu_45_invierno):.4f} = {Qc_invierno:.3f} \ \text {{W/m}}")
     st.markdown("""En verano:""")
-    st.latex(rf"Q_{{c_{{ver}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_verano:.4f} \cdot ({Tc} - {temperatura_verano}) \cdot {max(Nu_verano, Nu_45_verano):.4f} = {Qc_verano:.3f} \, W/m")
+    st.latex(rf"Q_{{c_{{ver}}}} = \pi \cdot {{\lambda_{{f}}}} \cdot ({{T_c}} - {{T_{{amb}}}}) \cdot Nu = \pi \cdot {conductividad_termica_aire_verano:.4f} \cdot ({Tc} - {temperatura_verano}) \cdot {max(Nu_verano, Nu_45_verano):.4f} = {Qc_verano:.3f} \ \text {{W/m}}")
+
 
     # Resultados corriente máxima: I = raiz((Qr+Qc-Qs)/resistencia_ca/1000)
     st.subheader("\n   11.4. RESULTADOS CORRIENTE MÁXIMA")
@@ -1717,7 +1742,7 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     st.markdown("""Los resultados en invierno son:""")
     st.latex(rf"I_{{max_{{inv}}}} = \sqrt{{\frac{{Q_{{r_{{inv}}}} + Q_{{c_{{inv}}}} - Q_{{s_{{inv}}}}}}{{R_{{ca}} \cdot 10^{{-3}}}}}} = \sqrt{{\frac{{{Qr_invierno:.3f} + {Qc_invierno:.3f} - {Qs_invierno:.3f}}}{{{resistencia_ca:.6f} \cdot 10^{{-3}}}}}} = {I_max_invierno:.2f} \, A")
     st.markdown("""Los resultados en verano son:""")
-    st.latex(rf"I_{{max_{{ver}}}} = \sqrt{{\frac{{Q_{{r_{{ver}}}} + Q_{{c_{{ver}}}} - Q_{{s_{{ver}}}}}}{{R_{{ca}} \cdot 10^{{-3}}}}}} = \sqrt{{\frac{{{Qr_verano:.3f} + {Qc_verano:.3f} - {Qs_verano:.3f}}}{{{resistencia_ca:.6f} \cdot 10^{{-3}}}}}} = {I_max_verano:.2f} \, A")
+    st.latex(rf"I_{{max_{{ver}}}} = \sqrt{{\frac{{Q_{{r_{{ver}}}} + Q_{{c_{{ver}}}} - Q_{{s_{{ver}}}}}}{{R_{{ca}} \cdot 10^{{-3}}}}}} = \sqrt{{\frac{{{Qr_verano:.3f} + {Qc_verano:.3f} - {Qs_verano:.3f}}}{{{resistencia_ca:.6f} \cdot 10^{{-3}}}}}} = {I_max_verano:.2f} \, \text A")
 
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # POTENCIA MÁXIMA DE TRANSPORTE SEGÚN CONDICIONES METEOROLÓGICAS
@@ -1728,6 +1753,13 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     print(f"\nPotencia máxima de transporte en invierno según condiciones meteorológicas: {potencia_maxima_invierno/1000:.2f} MW")
     print(f"Potencia máxima de transporte en verano según condiciones meteorológicas: {potencia_maxima_verano/1000:.2f} MW")
 
+
+    st.markdown("""La potencia máxima que puede transportar la línea será:""")
+    st.latex(r"P_{max} = \sqrt{3} \cdot U \cdot I_{max} \cdot cos \varphi")
+    st.markdown("""Obteniendo en invierno:""")
+    st.latex(rf"P_{{max}} = \sqrt{3} \cdot {{{tension_nominal:.0f}}} \cdot {{{I_max_invierno:.2f}}} \cdot {{{cos_phi}}} = {{{potencia_maxima_invierno:.2f}}} \, \text kW = {{{potencia_maxima_invierno/1000:.3f}}} \, \text MW ")
+    st.markdown("""Y en verano:""")
+    st.latex(rf"P_{{max}} = \sqrt{3} \cdot {{{tension_nominal:.0f}}} \cdot {{{I_max_verano:.2f}}} \cdot {{{cos_phi}}} = {{{potencia_maxima_verano:.2f}}} \, \text kW = {{{potencia_maxima_verano/1000:.3f}}} \, \text MW ")
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # PÉRDIDAS DE POTENCIA
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1743,6 +1775,28 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     perdidas_potencia_valor = (potencia_transportada_MW * resistencia_ca * longitud) / (tension_nominal**2 * cos_phi**2) * potencia_transportada_MW
     print(f"Pérdidas de potencia en la línea en valor absoluto: {perdidas_potencia_valor:.5f} MW")
 
+    st.markdown("""Las pérdidas de potencia por efecto Joule en una línea vienen dadas por la fórmula:""")
+    st.latex(r"\Delta P = 3 \cdot R \cdot L \cdot I^2")
+    st.markdown("""
+                Donde:
+                - $\Delta$: Pérdida de potencia en vatios
+                - $R$: Resistencia del conductor
+                - $L$: Longitud de la línea en km
+                - $I$: Intensidad de la línea en A
+                """
+                )
+    st.markdown("""
+                Teniendo en cuenta que:
+                - $P$: Potencia en MW
+                - $U$: Tensión en kV
+                - $cos \\varphi$: Factor de potencia
+                """)
+    st.markdown("""Se llega a la conclusión de que la pérdida de potencia en tanto por ciento, es de:""")
+    st.latex(r"\Delta P \%= \frac {P \cdot L \cdot R}{U^2 \cdot cos \varphi^2} \cdot 100")
+    st.markdown("""Sustituyendo los valores obtendremos:""")
+    st.latex(rf"\Delta P \% = \frac{{{{{potencia_transportada_MW:.2f}}} \cdot {{{longitud}}} \cdot {{{resistencia_ca:.4f}}}}}{{{{{tension_nominal:.0f}}}^2 \cdot {{{cos_phi}}}^2}} = {{{perdidas_potencia:.5f}}}")
+    st.markdown("""En valor absoluto:""")
+    st.latex(rf"\Delta P = {{{perdidas_potencia/100:.7f}}} \cdot {{{potencia_transportada_MW:.2f}}} = {{{perdidas_potencia_valor:.5f}}} \ \text MW")
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # CORTOCIRCUITO MÁXIMO
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1777,6 +1831,63 @@ if ndecircuitos==1 and ndeconductoresporfase==1:
     Icc_max = K * seccion / raiz(tiempo_accionamiento_proteccion)
     print(f"Icc max: {Icc_max} A")
 
+
+
+    st.markdown("""La máxima corriente de cortocircuito que puede soportar el conductor se puede calcular según la norma UNE-60965 y depende del material del conductor
+                , la sección del mismo y el tiempo considerado de cortocircuito.""")
+    st.markdown("""Se calcula el factor K con la siguiente expresión del Anexo A de la norma UNE-60865-1:""")
+    st.latex(r"K = \sqrt{\frac{к_{20} \cdot c \cdot \rho}{\alpha_{20}} \cdot ln \frac{1 + \alpha_{20} \cdot (\theta_{fin} - 20)}{1 + \alpha_{20} \cdot (\theta_{ini} - 20)}}")
+    st.markdown("""Con los siguientes datos del material:""")
+    st.latex(r"""
+    \begin{array}{|c|c|c|c|c|}
+    \hline
+    \textbf{Símbolo} &
+    \textbf{Unidad S.I.} &
+    \textbf{Cobre} &
+    \textbf{Aleación\ de\ aluminio\ (Al\!-\!Ac)} &
+    \textbf{Acero} \\
+    \hline
+    c &
+    \mathrm{J/(kg\,^\circ C)} &
+    390 &
+    910 &
+    480 \\
+    \hline
+    \rho &
+    \mathrm{kg/m^3} &
+    8900 &
+    2700 &
+    7850 \\
+    \hline
+    \kappa_{20} &
+    \mathrm{1/(\Omega\,m)} &
+    56 \cdot 10^{6} &
+    34.8 \cdot 10^{6} &
+    7.25 \cdot 10^{6} \\
+    \hline
+    \alpha_{20} &
+    \mathrm{1/^\circ C} &
+    0.0039 &
+    0.004 &
+    0.0045 \\
+    \hline
+    \end{array}
+    """)
+    st.markdown("""La temperatura final de cortocircuito se obtiene de la tabla 6 de la norma UNE 60865 para el material del conductor""")
+    st.latex(r"""
+    \begin{array}{|c|c|c|}
+    \hline
+    \textbf{Tipo de Conductor} &
+    \textbf{Temperatura máxima recomendada de un conductor durante un cortocircuito} \\
+    \hline
+    \textbf{Conductor desnudo, macizo o de hilos trenzados: cobre, aluminio o aleación de aluminio} &
+    \textbf{200 ºC} \\
+    \hline
+    \textbf{Conductor desnudo, macizo o de hilos trenzados: acero} &
+    \textbf{300 ºC} \\
+    \hline
+    \end{array}
+    """)
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # EFECTO CORONA
     #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2174,10 +2285,10 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
 
 
             # Generar código LaTeX compatible con Overleaf
-    latex_matrix = r"\[Z = \begin{pmatrix}" + "\n"
+    latex_matrix = r"$Z = \begin{pmatrix}" + "\n"
     for row in df.values:
         latex_matrix += " & ".join(f"{v:.4f}" for v in row) + r" \\ " + "\n"
-    latex_matrix += r"\end{pmatrix} \text{ Ω/km}\]"
+    latex_matrix += r"\end{pmatrix} \text{ Ω/km}$"
 
     # Mostrar el código LaTeX en Streamlit
     st.markdown("### Código LaTeX para Overleaf")
@@ -2185,7 +2296,7 @@ elif ndecircuitos==2 and ndeconductoresporfase==1:
 
 
 
-    
+
     # Finalmente, multiplicar por la longitud de la línea para obtener las impedancias totales
     Zfas_total = Zfas * longitud
     print("\nMatriz de impedancias por fase total para la longitud dada (Ω):")
